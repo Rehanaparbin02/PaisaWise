@@ -5,6 +5,9 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+// To-DO
+// 1) Add Back Button on the Profile Page
+
 export default function ProfileScreen() {
   const [darkMode, setDarkMode] = useState(false);
   const [name, setName] = useState('Rehana Parbin');
