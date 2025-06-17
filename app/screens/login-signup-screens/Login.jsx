@@ -66,7 +66,7 @@ export default function Login({ navigation }) {
         <TouchableOpacity style={styles.googleButton}>
           <View style={styles.googleButtonContent}>
             <Image
-              source={require('../../../assets/google.png')}
+              source={require('../../../assets/onbaording_home/google.png')}
               style={styles.googleIcon}
             />
             <Text style={styles.googleButtonText}>Login with Google</Text>

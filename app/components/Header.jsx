@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons'; // or any other icon set
+import Icon from 'react-native-vector-icons/Ionicons';
 
-export default function Header() {
+export default function Header({ navigation }) {
   return (
     <View style={styles.headerContainer}>
       {/* Profile Section */}
       <View style={styles.profileSection}>
         <Image
-          source={{ uri: 'https://i.pravatar.cc/300' }} // Replace with actual DP
+          source={{ uri: 'https://i.pravatar.cc/300' }}
           style={styles.profileImage}
         />
         <View>
@@ -19,16 +19,26 @@ export default function Header() {
 
       {/* Icon Buttons */}
       <View style={styles.iconSection}>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton}
+          onPress={() => navigation.navigate('Notification')}
+        >
           <Icon name="notifications-outline" size={24} color="#DC0083" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
+        {/* <TouchableOpacity style={styles.iconButton}>
           <Icon name="settings-outline" size={24} color="#DC0083" />
+        </TouchableOpacity> */}
+
+        {/* Profile Button */}
+        <TouchableOpacity
+          style={[styles.iconButton, { marginLeft: 16 }]}
+          onPress={() => navigation.navigate('ProfileScreen')}>
+          <Icon name="person-circle-outline" size={28} color="#DC0083" />
         </TouchableOpacity>
       </View>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',

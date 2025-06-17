@@ -12,12 +12,15 @@ import ResetPassword from '../screens/login-signup-screens/ResetPassword';
 import OTPVerification from '../screens/login-signup-screens/OTPVerification';
 
 import MiniCarousal from '../components/MiniCarousal';
-import AllCardsScreen from '../screens/carousal/AllCardsScreen';
+import AllCardsScreen from '../screens/home/AllCardsScreen';
 import FullBreakdownScreen from '../screens/home/FullBreakdownScreen';
 // Import your new screen
 import SeeAllTransactions from '../screens/home/SeeAllTransactions';
 
 import { getItem } from '../../utils/asyncStorage';
+import ProfileScreen from '../screens/profile_pages/ProfileScreen';
+import NotificationScreen from '../components/NotificationScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +47,14 @@ export default function AppNavigation() {
         component={OnBoarding}
         options={{ headerShown: false }}
       />
+       <Stack.Screen
+        name="ProfileScreen"
+        component={ProfileScreen}
+        options={{ headerShown: false, title: 'Profile' }}
+      />
+      <Stack.Screen name="Notification" component={NotificationScreen} options={{ headerShown: false }}/>
+
+
       <Stack.Screen
         name="LoginSignupPage"
         component={LoginSignupPage}

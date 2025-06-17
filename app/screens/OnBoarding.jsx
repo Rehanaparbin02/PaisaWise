@@ -39,7 +39,7 @@ export default function OnBoarding() {
             backgroundColor: '#EEEEEE',
             image: (
               <View style={styles.imageContainer}>
-                <LottieView source={require('../../assets/welcome.json')} autoPlay loop style={styles.lottie} />
+                <LottieView source={require('../../assets/onbaording_home/welcome.json')} autoPlay loop style={styles.lottie} />
               </View>
             ),
             title: (
@@ -53,7 +53,7 @@ export default function OnBoarding() {
             backgroundColor: '#EEEEEE',
             image: (
               <View style={styles.imageContainer}>
-                <LottieView source={require('../../assets/screen1.json')} autoPlay loop style={styles.lottie} />
+                <LottieView source={require('../../assets/onbaording_home/screen1.json')} autoPlay loop style={styles.lottie} />
               </View>
             ),
             title: (
@@ -67,7 +67,7 @@ export default function OnBoarding() {
             backgroundColor: '#EEEEEE',
             image: (
               <View style={styles.imageContainer}>
-                <LottieView source={require('../../assets/screen2.json')} autoPlay loop style={{ width: 385, height: 450 }} />
+                <LottieView source={require('../../assets/onbaording_home/screen2.json')} autoPlay loop style={{ width: 385, height: 450 }} />
               </View>
             ),
             title: (
@@ -81,7 +81,7 @@ export default function OnBoarding() {
             backgroundColor: '#EEEEEE',
             image: (
               <View style={styles.imageContainer}>
-                <LottieView source={require('../../assets/screen3.json')} autoPlay loop style={{ width: 385, height: 450 }} />
+                <LottieView source={require('../../assets/onbaording_home/screen3.json')} autoPlay loop style={{ width: 385, height: 450 }} />
               </View>
             ),
             title: (
@@ -95,7 +95,7 @@ export default function OnBoarding() {
             backgroundColor: '#EEEEEE',
             image: (
               <View style={styles.imageContainer}>
-                <LottieView source={require('../../assets/lastpage.json')} autoPlay loop style={{ width: 385, height: 450 }} />
+                <LottieView source={require('../../assets/onbaording_home/lastpage.json')} autoPlay loop style={{ width: 385, height: 450 }} />
               </View>
             ),
             title: (

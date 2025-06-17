@@ -13,8 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-import Budget from '../screens/Budget';
-import Daily from '../screens/Daily';
+import Budget from '../screens/Wallet';
+import Daily from '../screens/Planning';
 import Stats from '../screens/statistics/Stats';
 import HomeScreen from '../screens/home/HomeScreen';
 
@@ -40,18 +40,6 @@ const TabNavigator = () => {
 
   const toggleOptions = () => setShowOptions(!showOptions);
 
-  const handleNavigate = (screenName) => {
-    Animated.timing(animation, {
-      toValue: 0,
-      duration: 200,
-      easing: Easing.in(Easing.ease),
-      useNativeDriver: true,
-    }).start(() => {
-      setShowOptions(false);
-      navigation.navigate(screenName);
-    });
-  };
-
   const animatedStyle = {
     opacity: animation,
     transform: [
@@ -64,13 +52,26 @@ const TabNavigator = () => {
     ],
   };
 
-  const OptionButton = ({ label, onPress, style }) => (
-    <Animated.View style={[styles.optionButton, animatedStyle, style]}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-        <Text style={styles.optionText}>{label}</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
+  const OptionButton = ({ label, screenName, style }) => {
+    const navigation = useNavigation();
+    return (
+      <Animated.View style={[styles.optionButton, animatedStyle, style]}>
+        <TouchableOpacity onPress={() => {
+          Animated.timing(animation, {
+            toValue: 0,
+            duration: 200,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }).start(() => {
+            setShowOptions(false);
+            navigation.navigate(screenName);
+          });
+        }} activeOpacity={0.8} >
+          <Text style={styles.optionText}>{label}</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   return (
     <>
@@ -127,8 +128,8 @@ const TabNavigator = () => {
       {showOptions && (
         <>
           <Animated.View style={[styles.optionsContainer, animatedStyle]} pointerEvents="box-none">
-            <OptionButton label="Expenses" onPress={() => handleNavigate('Expenses')} style={styles.expensee} />
-            <OptionButton label="Incomes" onPress={() => handleNavigate('Income')} style={styles.incomee} />
+            <OptionButton label="Expenses" screenName="Expenses" style={styles.expensee} />
+            <OptionButton label="Incomes" screenName="Income" style={styles.incomee} />
           </Animated.View>
           <TouchableOpacity
             style={styles.overlay}

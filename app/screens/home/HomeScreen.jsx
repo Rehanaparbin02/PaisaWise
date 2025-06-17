@@ -26,7 +26,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.mainContainer}>
-      <Header />
+      <Header navigation={navigation} />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}

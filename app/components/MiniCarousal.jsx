@@ -6,9 +6,9 @@ import {
   Dimensions,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   Modal,
   Pressable,
+  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
@@ -32,9 +32,9 @@ export default function MiniCarousal() {
     { title: 'Card 6', subtitle: 'Subtitle 6' },
   ]);
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [titleInput, setTitleInput] = useState('');
-  const [subtitleInput, setSubtitleInput] = useState('');
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [titleInput, setTitleInput] = React.useState('');
+  const [subtitleInput, setSubtitleInput] = React.useState('');
 
   const addCard = () => {
     if (titleInput.trim()) {
@@ -45,16 +45,13 @@ export default function MiniCarousal() {
     }
   };
 
-  // Show max 6 cards in carousel, plus add button
   const maxCardsInCarousel = 6;
   const cardsForCarousel = cards.slice(0, maxCardsInCarousel);
 
-  // Data with Add Card button at index 0
   const data = [null, ...cardsForCarousel];
 
   const renderItem = ({ item, index }) => {
     if (index === 0) {
-      // Add Card button
       return (
         <TouchableOpacity
           style={[styles.card, styles.addCard]}
@@ -89,11 +86,15 @@ export default function MiniCarousal() {
         renderItem={renderItem}
       />
 
-      {/* See All button always visible if at least 1 card */}
       {cards.length > 0 && (
         <TouchableOpacity
           style={styles.seeAllButton}
-          onPress={() => navigation.navigate('AllCardsScreen', { cards, setCards })}
+          onPress={() =>
+            navigation.navigate('AllCardsScreen', {
+              cards,
+              setCards,
+            })
+          }
         >
           <Text style={styles.seeAllButtonText}>See All</Text>
         </TouchableOpacity>
@@ -148,7 +149,7 @@ export default function MiniCarousal() {
 const styles = StyleSheet.create({
   container: {
     marginTop: 30,
-    height: 200, // To leave space for See All button below
+    height: 200,
   },
   flatListContent: {
     paddingHorizontal: 10,
