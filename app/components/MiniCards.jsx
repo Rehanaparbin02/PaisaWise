@@ -13,7 +13,6 @@ export default function MiniCard({ title, amount, iconName, iconColor, cardStyle
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   miniCard: {
     flex: 1,
