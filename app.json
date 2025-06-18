@@ -1,8 +1,8 @@
 {
   "expo": {
-    "scheme": "taskmaster",
-    "name": "TaskMaster",
-    "slug": "TaskMaster",
+    "scheme": "paisawise",
+    "name": "PaisaWise",
+    "slug": "PaisaWise",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.TaskMaster"
+      "package": "com.anonymous.PaisaWise"
     },
     "web": {
       "favicon": "./assets/icon.png"
