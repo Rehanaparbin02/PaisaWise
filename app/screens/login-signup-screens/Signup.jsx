@@ -21,8 +21,15 @@ export default function Signup({ navigation }) {
     }).start();
   }, []);
 
+  const handleBack = () =>{
+    navigation.replace('LoginSignupPage');
+  }
+
   return (
     <View style={styles.container}>
+
+      <PrettyPinkButton title="Back"  onPress={handleBack} style={styles.backbtn}/>
+
       <Text style={styles.heading}>PaisaWise</Text>
       <Text style={styles.title}>Create Your Account</Text>
 
@@ -82,6 +89,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
   },
+
+  backbtn:{
+    position: 'absolute',
+    top: 550 ,
+    left: -180,
+    width: 50,
+    height: 20,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   heading: {
     fontSize: 34,
     fontWeight: 'bold',
