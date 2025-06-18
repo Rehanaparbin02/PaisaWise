@@ -5,11 +5,11 @@ import OnBoarding from '../screens/OnBoarding';
 import TabNavigator from './tabsNavigation';
 import Income from '../screens/Income';
 import Expenses from '../screens/Expenses';
-import Signup from '../screens/login-signup-screens/Signup'; 
-import LoginSignupPage from '../screens/login-signup-screens/LoginSignupPage';
-import Login from '../screens/login-signup-screens/Login';
-import ResetPassword from '../screens/login-signup-screens/ResetPassword';
-import OTPVerification from '../screens/login-signup-screens/OTPVerification';
+import Signup from '../screens/Authscreens/Signup'; 
+import LoginSignupPage from '../screens/Authscreens/LoginSignupPage';
+import Login from '../screens/Authscreens/Login';
+import ResetPassword from '../screens/Authscreens/ResetPassword';
+import OTPVerification from '../screens/Authscreens/OTPVerification';
 
 import MiniCarousal from '../components/MiniCarousal';
 import AllCardsScreen from '../screens/home/AllCardsScreen';
