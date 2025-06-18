@@ -39,13 +39,13 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <View style={{ flex: 1, marginLeft: 16 }}>
-          <TextInput
+          {/* <TextInput
             value={name}
             onChangeText={setName}
             style={[styles.name, { color: themed('#021526', '#ECCEAE') }]}
             placeholder="Your Name"
             placeholderTextColor={themed('#aaa', '#888')}
-          />
+          /> */}<Text style={styles.name}>Rehana Parbin</Text>
           <TextInput
             value={bio}
             onChangeText={setBio}
@@ -54,30 +54,18 @@ export default function ProfileScreen() {
             placeholder="Tell us about yourself"
             placeholderTextColor={themed('#aaa', '#888')}
           />
-          <TextInput
+          {/* <TextInput
             value={email}
             onChangeText={setEmail}
             style={[styles.email, { color: themed('#444', '#ECCEAE') }]}
             keyboardType="email-address"
             placeholder="Email"
             placeholderTextColor={themed('#aaa', '#888')}
-          />
+          /> */}
+
+          <Text style={styles.email}>rehana.parbin@example.com</Text>
         </View>
       </View>
-
-      {/* Stats */}
-      {/* <View style={[styles.card, { backgroundColor: themed('#E2DCC8', '#0D1B2A') }]}>
-        <View style={styles.statsRow}>
-          {['Posts', 'Followers', 'Following'].map((label, index) => (
-            <View key={index} style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: themed('#021526', '#ECCEAE') }]}>
-                {index === 0 ? '120' : index === 1 ? '350' : '180'}
-              </Text>
-              <Text style={[styles.statLabel, { color: themed('#555', '#AAA') }]}>{label}</Text>
-            </View>
-          ))}
-        </View>
-      </View> */}
 
       {/* Badges */}
       <View style={[styles.card, { backgroundColor: themed('#E2DCC8', '#0D1B2A') }]}>
