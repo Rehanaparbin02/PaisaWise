@@ -25,7 +25,7 @@ export default function LoginSignupPage() {
         <Text style={styles.header}>LoginSignupPage</Text>
         <PrettyPinkButton title="Signup" onPress={handleLogin} style={{width: 200}} />
         <Text>OR</Text>
-        <PrettyPinkButton title="Login" onPress={handleLogin} />
+        <PrettyPinkButton title="Login" onPress={handleLogin} style={{width: 200}} />
       </Animated.View>
     </View>
   )
