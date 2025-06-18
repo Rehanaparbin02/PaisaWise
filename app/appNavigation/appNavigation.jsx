@@ -50,7 +50,7 @@ export default function AppNavigation() {
        <Stack.Screen
         name="ProfileScreen"
         component={ProfileScreen}
-        options={{ headerShown: false, title: 'Profile' }}
+        options={{ headerShown: true, title: 'Profile' }}    //modified false to true
       />
       <Stack.Screen name="Notification" component={NotificationScreen} options={{ headerShown: false }}/>
 
