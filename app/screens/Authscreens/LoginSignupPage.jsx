@@ -41,8 +41,6 @@ const styles = StyleSheet.create({
   loginImage: {
     width: 350,
     height: 300,
-    // borderColor: 'white',
-    // borderWidth: 2,
     position: 'relative',
     top: 20
   },

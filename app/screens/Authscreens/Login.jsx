@@ -25,7 +25,7 @@ export default function Login({ navigation }) {
 
   const handleLogin = () => {
     console.log('Logging in with', email, password);
-    navigation.replace('MainTabs');
+    navigation.replace('ProfileSetup');
   };
 
   return (

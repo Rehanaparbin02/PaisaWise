@@ -20,7 +20,7 @@ import SeeAllTransactions from '../screens/home/SeeAllTransactions';
 import { getItem } from '../../utils/asyncStorage';
 import ProfileScreen from '../screens/profile_pages/ProfileScreen';
 import NotificationScreen from '../components/NotificationScreen';
-
+import ProfileSetup from '../screens/profile_pages/ProfileSetup';
 
 const Stack = createNativeStackNavigator();
 
@@ -52,7 +52,18 @@ export default function AppNavigation() {
         component={ProfileScreen}
         options={{ headerShown: true, title: 'Profile' }}    //modified false to true
       />
-      <Stack.Screen name="Notification" component={NotificationScreen} options={{ headerShown: false }}/>
+
+      <Stack.Screen
+        name="ProfileSetup"
+        component={ProfileSetup}
+        options={{ headerShown: true, title: 'Profile-Setup' }}    //modified false to true
+      />
+
+      <Stack.Screen 
+      name="Notification" 
+      component={NotificationScreen} 
+      options={{ headerShown: false }}
+      />
 
 
       <Stack.Screen

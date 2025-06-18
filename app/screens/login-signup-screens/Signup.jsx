@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState,useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,18 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import PrettyPinkButton from '../../components/PrettyPinkButton';
+import { supabase } from '../../../supabase';
+import { useSafeAreaFrame } from 'react-native-safe-area-context';
+import { Alert } from 'react-native';
 
 export default function Signup({ navigation }) {
+  
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+   const [loading, setLoading] = useState(false)
+
+
   const slideAnim = useRef(new Animated.Value(600)).current;
 
   useEffect(() => {
@@ -24,6 +34,64 @@ export default function Signup({ navigation }) {
   const handleBack = () =>{
     navigation.replace('LoginSignupPage');
   }
+
+  // async function handleSignup() {
+  //   setLoading(true)
+  //   console.log('handleSignup()')
+  //   const {
+  //     data: {session},
+  //     error,
+  //   } = await supabase.auth.signup({
+  //     email: email,
+  //     password: password,
+  //   })
+    
+  //   console.log('data:',data)
+  //   if (error) {
+  //     Alert.alert(error.message) 
+  //     console.log('error: ', error)
+  //   }   
+  //   if (!session) {
+  //     console.log('session not working ')
+  //         Alert.alert('Please check your inbox for email verification!')
+  //  } else {
+  //   console.log('session working ')
+  //     navigation.replace('ProfileSetup')
+  //   }
+  //   setLoading(false)
+  //   }
+
+async function handleSignup() {
+  setLoading(true);
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: password.trim(),
+    });
+
+    if (error) {
+      console.error('Signup error:', error);
+      Alert.alert('Error', error.message);
+    } else {
+      if (data.user && !data.session) {
+        Alert.alert(
+          'Verify your email',
+          'A verification link has been sent to your inbox. Please verify before logging in.'
+        );
+        navigation.replace('Login'); // or wherever you want to go post-registration
+      } else {
+        // Only if session is immediately returned, which is rare
+        navigation.replace('ProfileSetup');
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected signup error:', err);
+    Alert.alert('Unexpected Error', 'Please try again later.');
+  } finally {
+    setLoading(false);
+  }
+}
+
 
   return (
     <View style={styles.container}>
@@ -43,23 +111,32 @@ export default function Signup({ navigation }) {
           placeholder="Email"
           placeholderTextColor="#ccc"
           keyboardType="email-address"
+          value={email}
+          autoCapitalize={'none'}
+          onChangeText={(text) => setEmail(text)}
+
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
           placeholderTextColor="#ccc"
-          secureTextEntry
+          secureTextEntry={true}
+          value={password}
+          autoCapitalize={'none'}
+          onChangeText={(text) => setPassword(text)}
         />
         <TextInput
           style={styles.input}
           placeholder="Confirm Password"
           placeholderTextColor="#ccc"
           secureTextEntry
+          onChangeText={(text) => setConfirmPassword(text)}
         />
 
         <PrettyPinkButton
           title="Complete Signup"
-          onPress={() => navigation.replace('Maintabs')}
+          onPress={() => handleSignup()}
+          disabled={loading}
         />
 
         <Text style={styles.orText}>OR</Text>
@@ -81,6 +158,7 @@ export default function Signup({ navigation }) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { 
