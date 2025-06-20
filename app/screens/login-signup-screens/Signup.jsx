@@ -1,4 +1,4 @@
-import React, { useState,useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,21 +6,21 @@ import {
   TextInput,
   Animated,
   TouchableOpacity,
+  Alert,
+  Dimensions,
 } from 'react-native';
 import PrettyPinkButton from '../../components/PrettyPinkButton';
 import { supabase } from '../../../supabase';
-import { useSafeAreaFrame } from 'react-native-safe-area-context';
-import { Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Signup({ navigation }) {
-  
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-   const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
-
-  const slideAnim = useRef(new Animated.Value(600)).current;
+  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current;
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -31,72 +31,85 @@ export default function Signup({ navigation }) {
     }).start();
   }, []);
 
-  const handleBack = () =>{
+  const handleBack = () => {
     navigation.replace('LoginSignupPage');
-  }
+  };
 
-  // async function handleSignup() {
-  //   setLoading(true)
-  //   console.log('handleSignup()')
-  //   const {
-  //     data: {session},
-  //     error,
-  //   } = await supabase.auth.signup({
-  //     email: email,
-  //     password: password,
-  //   })
-    
-  //   console.log('data:',data)
-  //   if (error) {
-  //     Alert.alert(error.message) 
-  //     console.log('error: ', error)
-  //   }   
-  //   if (!session) {
-  //     console.log('session not working ')
-  //         Alert.alert('Please check your inbox for email verification!')
-  //  } else {
-  //   console.log('session working ')
-  //     navigation.replace('ProfileSetup')
-  //   }
-  //   setLoading(false)
-  //   }
+  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
-async function handleSignup() {
-  setLoading(true);
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password: password.trim(),
-    });
+  async function handleSignup() {
+    setLoading(true);
 
-    if (error) {
-      console.error('Signup error:', error);
-      Alert.alert('Error', error.message);
-    } else {
-      if (data.user && !data.session) {
-        Alert.alert(
-          'Verify your email',
-          'A verification link has been sent to your inbox. Please verify before logging in.'
-        );
-        navigation.replace('Login'); // or wherever you want to go post-registration
-      } else {
-        // Only if session is immediately returned, which is rare
-        navigation.replace('ProfileSetup');
-      }
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      Alert.alert('Error', 'Please fill all the fields.');
+      setLoading(false);
+      return;
     }
-  } catch (err) {
-    console.error('Unexpected signup error:', err);
-    Alert.alert('Unexpected Error', 'Please try again later.');
-  } finally {
-    setLoading(false);
+
+    if (!isValidEmail(email.trim())) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const payload = {
+        email: email.trim(),
+        password: password.trim(), // Ideally hash this on the backend
+      };
+      const { data, error } = await supabase
+        .from('user_data')
+        .insert([payload]);
+
+  //     if (error) throw error;
+
+  //     console.log('Submitted form: ', payload);
+  //     Alert.alert('Success', 'Successfully created account');
+
+  //     setEmail('');
+  //     setPassword('');
+  //     setConfirmPassword('');
+  //   } catch (error) {
+  //     console.error('Signup error:', error);
+  //     Alert.alert('Error', error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+        error? (() => {
+        console.error('Signup error:', error);
+        Alert.alert('Error', error.message);
+      })()
+    : (() => {
+        console.log('Submitted form: ', payload);
+        Alert.alert('Success', 'Successfully created account');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        navigation.replace('Login');
+      })();
+      } catch (error) {
+        console.error('Unexpected signup error:', error);
+        Alert.alert('Unexpected Error', error.message || 'Something went wrong');
+      } finally {
+        setLoading(false);
+      }
   }
-}
-
-
   return (
-    <View style={styles.container}>
-
-      <PrettyPinkButton title="Back"  onPress={handleBack} style={styles.backbtn}/>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <PrettyPinkButton title="Back" onPress={handleBack} style={styles.backbtn} />
 
       <Text style={styles.heading}>PaisaWise</Text>
       <Text style={styles.title}>Create Your Account</Text>
@@ -112,36 +125,39 @@ async function handleSignup() {
           placeholderTextColor="#ccc"
           keyboardType="email-address"
           value={email}
-          autoCapitalize={'none'}
-          onChangeText={(text) => setEmail(text)}
-
+          autoCapitalize="none"
+          onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
           placeholderTextColor="#ccc"
-          secureTextEntry={true}
+          secureTextEntry
           value={password}
-          autoCapitalize={'none'}
-          onChangeText={(text) => setPassword(text)}
+          autoCapitalize="none"
+          onChangeText={setPassword}
         />
         <TextInput
           style={styles.input}
           placeholder="Confirm Password"
           placeholderTextColor="#ccc"
           secureTextEntry
-          onChangeText={(text) => setConfirmPassword(text)}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
         />
 
         <PrettyPinkButton
-          title="Complete Signup"
-          onPress={() => handleSignup()}
+          title={loading ? 'Creating...' : 'Complete Signup'}
+          onPress={handleSignup}
           disabled={loading}
         />
 
         <Text style={styles.orText}>OR</Text>
 
-        <TouchableOpacity style={styles.googleButton}>
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={() => Alert.alert('Coming Soon', 'Google Sign-in not yet implemented')}
+        >
           <Text style={styles.googleButtonText}>Sign up with Google</Text>
         </TouchableOpacity>
 
@@ -159,42 +175,38 @@ async function handleSignup() {
   );
 }
 
-
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#fff',
+    alignItems: 'center',
   },
-
-  backbtn:{
+  backbtn: {
     position: 'absolute',
-    top: 550 ,
-    left: -180,
-    width: 50,
-    height: 20,
+    top: 60,
+    left: 20,
+    width: 60,
+    height: 30,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
-
   heading: {
     fontSize: 34,
     fontWeight: 'bold',
     color: '#EB3678',
-    position: 'absolute',
-    top: 60,
+    marginTop: 90,
   },
   title: {
     fontSize: 20,
     color: '#555',
     fontWeight: '600',
-    position: 'absolute',
-    top: 105,
+    marginTop: 8,
   },
   subcontainer: {
     width: '90%',
+    marginTop: 40,
     padding: 24,
     backgroundColor: '#1C1A1A',
     borderRadius: 24,
@@ -243,6 +255,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#ccc',
     textAlign: 'center',
-    marginTop: 15,
   },
 });

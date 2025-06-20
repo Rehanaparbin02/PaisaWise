@@ -5,7 +5,6 @@ const ProfileSetup = () => {
   return (
     <View>
       <Text>ProfileSetup</Text>
-      {/* <PreetyPi */}
     </View>
   )
 }

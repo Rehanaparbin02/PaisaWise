@@ -5,7 +5,6 @@ import { createClient, processLock } from '@supabase/supabase-js'
 
 const supabaseUrl = "https://meqwccfciaphhwvqeznu.supabase.co"
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lcXdjY2ZjaWFwaGh3dnFlem51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNjMxODQsImV4cCI6MjA2NTgzOTE4NH0.SHVwu8FLd6Iw25VNfrgFvdCi9vCsrwJL4PYsTBh_ie8"
-
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
