@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   Image,
   Animated,
+  Alert,
 } from 'react-native';
 import PrettyPinkButton from '../../components/PrettyPinkButton';
+import { supabase } from '../../../supabase';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
@@ -23,9 +25,21 @@ export default function Login({ navigation }) {
     }).start();
   }, []);
 
-  const handleLogin = () => {
-    console.log('Logging in with', email, password);
-    navigation.replace('MainTabs');
+  const handleLogin = async () => {
+    const { data,error} = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+    if (error) {
+      console.log('Error during login:', error);
+      Alert.alert('Loging In Failed: ');
+      return;
+    }
+
+    Alert.alert(
+      'Login successful.',
+    );
+    navigation.replace('Home');
   };
 
   const handleBack = () =>{

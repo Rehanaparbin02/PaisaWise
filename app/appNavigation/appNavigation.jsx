@@ -21,6 +21,7 @@ import { getItem } from '../../utils/asyncStorage';
 import ProfileScreen from '../screens/profile_pages/ProfileScreen';
 import NotificationScreen from '../components/NotificationScreen';
 import ProfileSetup from '../screens/profile_pages/ProfileSetup';
+import HomeScreen from '../screens/home/HomeScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -96,6 +97,12 @@ export default function AppNavigation() {
         name="MainTabs"
         component={TabNavigator}
         options={{ headerShown: false }}
+      />
+
+      <Stack.Screen 
+        name="Home"
+        component={HomeScreen}
+        options={{ headerShown: false, title: 'Home' }}
       />
 
       <Stack.Screen

@@ -64,49 +64,58 @@ export default function Signup({ navigation }) {
       return;
     }
 
+    setLoading(true);
+
     try {
-      const payload = {
-        email: email.trim(),
-        password: password.trim(), // Ideally hash this on the backend
-      };
-      const { data, error } = await supabase
-        .from('user_data')
-        .insert([payload]);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
 
-  //     if (error) throw error;
-
-  //     console.log('Submitted form: ', payload);
-  //     Alert.alert('Success', 'Successfully created account');
-
-  //     setEmail('');
-  //     setPassword('');
-  //     setConfirmPassword('');
-  //   } catch (error) {
-  //     console.error('Signup error:', error);
-  //     Alert.alert('Error', error.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
-        error? (() => {
-        console.error('Signup error:', error);
-        Alert.alert('Error', error.message);
-      })()
-    : (() => {
-        console.log('Submitted form: ', payload);
-        Alert.alert('Success', 'Successfully created account');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        navigation.replace('Login');
-      })();
-      } catch (error) {
-        console.error('Unexpected signup error:', error);
-        Alert.alert('Unexpected Error', error.message || 'Something went wrong');
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Signup error:', error.message);
+        Alert.alert('Signup Failed', error.message);
+        return;
       }
-  }
+      const user  = data?.user;
+      if(!user) {
+        Alert.alert('Verification Needed', 'Please check your email to verify your account.');
+        return;
+      }
+
+      console.log('User: ', user);
+      const {error: insertError} = await supabase
+        .from('user_data')
+        .insert([
+          {
+            user_id: user.id,
+            email
+          }
+        ])
+
+        if(insertError){
+          throw insertError;
+        }
+
+
+      console.log('Signup success:', data);
+      Alert.alert('Success', 'Account created successfully. Please check your email (if confirmation enabled).');
+
+      // Optional cleanup
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+
+      // Navigate to Login
+      navigation.replace('Login');
+    } catch (error) {
+      console.error('Unexpected signup error:', error);
+      Alert.alert('Unexpected Error', error.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+};
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <PrettyPinkButton title="Back" onPress={handleBack} style={styles.backbtn} />
@@ -172,8 +181,8 @@ export default function Signup({ navigation }) {
         </Text>
       </Animated.View>
     </View>
-  );
-}
+    );
+  }
 
 const styles = StyleSheet.create({
   container: {

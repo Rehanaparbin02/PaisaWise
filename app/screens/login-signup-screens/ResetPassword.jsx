@@ -87,6 +87,7 @@ export default function ResetPassword({ navigation }) {
           </View>
         </Modal>
       </View>
+      <PrettyPinkButton title="Back" onPress={() => navigation.goBack()} />
     </View>
   );
 }
@@ -94,7 +95,7 @@ export default function ResetPassword({ navigation }) {
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    backgroundColor: '#2A2727',
+    backgroundColor: '#1C1A1A',
     padding: 24,
     justifyContent: 'center',
     alignItems: 'center',
