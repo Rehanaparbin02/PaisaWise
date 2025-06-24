@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Linking } from 'react-native';
 
 import OnBoarding from '../screens/OnBoarding';
 import TabNavigator from './tabsNavigation';
@@ -27,6 +28,7 @@ const Stack = createNativeStackNavigator();
 
 export default function AppNavigation() {
   const [showOnBoarding, setShowOnBoarding] = useState(null);
+  const navigationRef = useRef();
 
   useEffect(() => {
     const checkIfAlreadyOnboarded = async () => {
@@ -36,19 +38,89 @@ export default function AppNavigation() {
     checkIfAlreadyOnboarded();
   }, []);
 
+  // Deep link handling
+  useEffect(() => {
+    const handleDeepLink = (url) => {
+      if (url && navigationRef.current) {
+        console.log('Deep link received:', url);
+        
+        // Handle paisawise:// scheme
+        if (url.startsWith('paisawise://')) {
+          const route = url.replace('paisawise://', '');
+          const [screenName, queryString] = route.split('?');
+          
+          if (screenName === 'OTPVerification' && queryString) {
+            const params = new URLSearchParams(queryString);
+            const contact = params.get('contact');
+            
+            if (contact) {
+              console.log('Navigating to OTP verification with contact:', contact);
+              navigationRef.current.navigate('OTPVerification', { 
+                contact: decodeURIComponent(contact) 
+              });
+            }
+          }
+        }
+        // Handle expo development URLs
+        else if (url.includes('OTPVerification')) {
+          const urlParts = url.split('?');
+          if (urlParts[1]) {
+            const params = new URLSearchParams(urlParts[1]);
+            const contact = params.get('contact');
+            
+            if (contact) {
+              console.log('Navigating to OTP verification with contact:', contact);
+              navigationRef.current.navigate('OTPVerification', { 
+                contact: decodeURIComponent(contact) 
+              });
+            }
+          }
+        }
+      }
+    };
+
+    // Handle deep link when app is opened from a link
+    const handleInitialURL = async () => {
+      try {
+        const initialUrl = await Linking.getInitialURL();
+        if (initialUrl) {
+          console.log('Initial URL:', initialUrl);
+          // Add a small delay to ensure navigation is ready
+          setTimeout(() => {
+            handleDeepLink(initialUrl);
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('Error handling initial URL:', error);
+      }
+    };
+
+    // Handle deep link when app is already running
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleDeepLink(url);
+    });
+
+    handleInitialURL();
+
+    return () => subscription?.remove();
+  }, []);
+
   if (showOnBoarding === null) {
     return null; // Or a splash/loading screen
   }
 
   return (
-        <Stack.Navigator initialRouteName={showOnBoarding ? 'Onboarding' : 'MainTabs'}>
+    <Stack.Navigator 
+      ref={navigationRef}
+      initialRouteName={showOnBoarding ? 'Onboarding' : 'MainTabs'}
+    >
       {/* ✅ Always register Onboarding */}
-              <Stack.Screen
+      <Stack.Screen
         name="Onboarding"
         component={OnBoarding}
         options={{ headerShown: false }}
       />
-       <Stack.Screen
+      <Stack.Screen
         name="ProfileScreen"
         component={ProfileScreen}
         options={{ headerShown: true, title: 'Profile' }}    //modified false to true
@@ -61,11 +133,10 @@ export default function AppNavigation() {
       />
 
       <Stack.Screen 
-      name="Notification" 
-      component={NotificationScreen} 
-      options={{ headerShown: false }}
+        name="Notification" 
+        component={NotificationScreen} 
+        options={{ headerShown: false }}
       />
-
 
       <Stack.Screen
         name="LoginSignupPage"
@@ -136,8 +207,6 @@ export default function AppNavigation() {
         component={FullBreakdownScreen}
         options={{ headerShown: false }}
       />
-
-
     </Stack.Navigator>
   );
 }

@@ -1,193 +1,186 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Alert
-} from 'react-native';
-import PrettyPinkButton from '../../components/PrettyPinkButton';
-//supabase client initialization
-import { supabase } from '../../../supabase';
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { supabase } from '../../../supabase'; // ✅ Import your existing client
 
-export default function ResetPassword({ navigation }) {
+export default function ResetPasswordScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorModalVisible, setErrorModalVisible] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalInfo, setModalInfo] = useState({ isVisible: false, isError: false, message: '', email: '' });
 
-  //function to trigger supabase to send a recovery mail
   const handleSendOTP = async () => {
-    if (!email.trim()) {
-      Alert.alert('error','Please enter your email address')
-      // setErrorModalVisible(true);
+    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+      setModalInfo({ isVisible: true, isError: true, message: 'Please enter a valid email.', email: '' });
       return;
     }
+
     setLoading(true);
-    // Use the user's email to send a password reset token (OTP).
-    // Supabase sends an email with a link that contains a `token` which can be used as an OTP.
-    // Ensure your Supabase email template for "Password Recovery" is configured to clearly show the OTP.
-    
-    const {error} = await supabase.auth.resetPasswordForEmail(email,{
-      redirectTo: 'exp://192.168.31.218:8081/OTPVerification',
-    })
-    if (error) {
-      Alert.alert('Error Sending OTP', error.message);
-    } else {
-      Alert.alert('Success', `An OTP has been sent to ${email}.`);
-      // Navigate to the OTP screen, passing the email as a parameter
-      navigation.navigate('OTPVerification', { email });
-    }
+    const redirectURL = `paisawise://OTPVerification?contact=${encodeURIComponent(email)}`;
+
+    // ✅ Call real supabase client
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { 
+      redirectTo: redirectURL 
+    });
+
     setLoading(false);
-  };
-    const closeSuccessModal = () => {
-    setModalVisible(false);
-    navigation.navigate('OTPVerification', { contact: email });
+    setModalInfo({
+      isVisible: true,
+      isError: !!error,
+      message: error ? error.message : 'Password reset link sent to:',
+      email: error ? '' : email,
+    });
   };
 
-  const closeErrorModal = () => {
-    setErrorModalVisible(false);
+  const closeModal = () => {
+    const { isError, email } = modalInfo;
+    setModalInfo({ isVisible: false, isError: false, message: '', email: '' });
+
+    if (!isError) {
+      navigation.navigate('OTPVerification', { email }); 
+    }
   };
- 
+
   return (
-    <View style={styles.screenContainer}>
-      <View style={styles.cardContainer}>
+    <View style={styles.container}>
+      <View style={styles.card}>
         <Text style={styles.heading}>Reset Password</Text>
-        <Text style={styles.subheading}>Enter your email or phone to receive an OTP</Text>
+        <Text style={styles.subheading}>Enter your email to receive a reset link.</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Email or Phone Number"
+          placeholder="Enter your email"
           placeholderTextColor="#999"
           value={email}
           onChangeText={setEmail}
-          keyboardType="default"
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
 
-        <PrettyPinkButton title="Send OTP" onPress={handleSendOTP} />
+        <TouchableOpacity style={styles.button} onPress={handleSendOTP} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.buttonText}>Send Reset Link</Text>
+          )}
+        </TouchableOpacity>
 
-        {/* Success Modal */}
-        <Modal
-          transparent
-          animationType="slide"
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>OTP sent successfully to:</Text>
-              <Text style={styles.modalContact}>{email}</Text>
-
-              <TouchableOpacity style={styles.modalButton} onPress={closeSuccessModal}>
-                <Text style={styles.modalButtonText}>OK</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Error Modal */}
-        <Modal
-          transparent
-          animationType="fade"
-          visible={errorModalVisible}
-          onRequestClose={() => setErrorModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalBox, { backgroundColor: '#FDECEA' }]}>
-              <Text style={[styles.modalText, { color: '#D93025' }]}>
-                Please enter your email or phone number
-              </Text>
-
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#D93025' }]} onPress={closeErrorModal}>
-                <Text style={styles.modalButtonText}>OK</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+        <TouchableOpacity style={[styles.button, styles.backButton]} onPress={() => navigation.goBack()}>
+          <Text style={styles.buttonText}>Back</Text>
+        </TouchableOpacity>
       </View>
-      <PrettyPinkButton title="Back" onPress={() => navigation.goBack()} />
+
+      <Modal visible={modalInfo.isVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={[styles.modalMessage, modalInfo.isError && styles.modalError]}>
+              {modalInfo.message}
+            </Text>
+            {modalInfo.email ? <Text style={styles.modalEmail}>{modalInfo.email}</Text> : null}
+            <TouchableOpacity style={styles.modalButton} onPress={closeModal}>
+              <Text style={styles.modalButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
+// --- Styles ---
 const styles = StyleSheet.create({
-  screenContainer: {
+  container: {
     flex: 1,
-    backgroundColor: '#1C1A1A',
-    padding: 24,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardContainer: {
-    width: '100%',
     backgroundColor: '#F8F4F4',
-    borderRadius: 20,
+    padding: 24,
+  },
+  card: {
+    backgroundColor: '#1F2937', // bg-gray-800
+    borderRadius: 16, // rounded-2xl
     padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 20,
   },
   heading: {
-    fontSize: 28,
+    fontSize: 28, // text-3xl
     fontWeight: 'bold',
-    color: '#EB3678',
-    marginBottom: 10,
+    color: '#EC4899', // text-pink-500
+    textAlign: 'center',
+    marginBottom: 8,
   },
   subheading: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 30,
+    color: '#9CA3AF', // text-gray-400
+    textAlign: 'center',
+    marginBottom: 24,
   },
   input: {
-    height: 48,
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: '#FFF',
+    borderRadius: 8,
     paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    marginBottom: 16,
+    color: '#111',
     fontSize: 16,
-    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#EC4899', // bg-pink-500
+    borderRadius: 9999, // rounded-full
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  backButton: {
+    backgroundColor: '#4B5563', // A slightly darker gray for the back button
+  },
+  buttonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalBox: {
-    backgroundColor: '#F8F4F4',
-    width: '80%',
-    borderRadius: 20,
+  modalContent: {
+    backgroundColor: '#FFF',
     padding: 24,
+    borderRadius: 16, // rounded-2xl
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 10,
+    width: '85%',
+    maxWidth: 340,
   },
-  modalText: {
+  modalMessage: {
     fontSize: 18,
-    color: '#333',
+    color: '#374151',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalError: {
+    color: '#DC2626', // text-red-600
+  },
+  modalEmail: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#EC4899', // text-pink-500
     marginBottom: 20,
     textAlign: 'center',
   },
-  modalContact: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#EB3678',
-    marginBottom: 20,
-  },
   modalButton: {
-    backgroundColor: '#EB3678',
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 40,
+    backgroundColor: '#EC4899', // bg-pink-500
+    borderRadius: 9999, // rounded-full
+    paddingVertical: 10,
+    paddingHorizontal: 24,
   },
   modalButtonText: {
-    color: '#fff',
+    color: '#FFF',
     fontWeight: 'bold',
     fontSize: 16,
   },
