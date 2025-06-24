@@ -6,31 +6,51 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
+  Alert
 } from 'react-native';
 import PrettyPinkButton from '../../components/PrettyPinkButton';
+//supabase client initialization
+import { supabase } from '../../../supabase';
 
 export default function ResetPassword({ navigation }) {
-  const [emailOrPhone, setEmailOrPhone] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const handleSendOTP = () => {
-    if (!emailOrPhone.trim()) {
-      setErrorModalVisible(true);
+  //function to trigger supabase to send a recovery mail
+  const handleSendOTP = async () => {
+    if (!email.trim()) {
+      Alert.alert('error','Please enter your email address')
+      // setErrorModalVisible(true);
       return;
     }
-    setModalVisible(true);
+    setLoading(true);
+    // Use the user's email to send a password reset token (OTP).
+    // Supabase sends an email with a link that contains a `token` which can be used as an OTP.
+    // Ensure your Supabase email template for "Password Recovery" is configured to clearly show the OTP.
+    
+    const {error} = await supabase.auth.resetPasswordForEmail(email,{
+      redirectTo: 'exp://192.168.31.218:8081/OTPVerification',
+    })
+    if (error) {
+      Alert.alert('Error Sending OTP', error.message);
+    } else {
+      Alert.alert('Success', `An OTP has been sent to ${email}.`);
+      // Navigate to the OTP screen, passing the email as a parameter
+      navigation.navigate('OTPVerification', { email });
+    }
+    setLoading(false);
   };
-
-  const closeSuccessModal = () => {
+    const closeSuccessModal = () => {
     setModalVisible(false);
-    navigation.navigate('OTPVerification', { contact: emailOrPhone });
+    navigation.navigate('OTPVerification', { contact: email });
   };
 
   const closeErrorModal = () => {
     setErrorModalVisible(false);
   };
-
+ 
   return (
     <View style={styles.screenContainer}>
       <View style={styles.cardContainer}>
@@ -41,8 +61,8 @@ export default function ResetPassword({ navigation }) {
           style={styles.input}
           placeholder="Email or Phone Number"
           placeholderTextColor="#999"
-          value={emailOrPhone}
-          onChangeText={setEmailOrPhone}
+          value={email}
+          onChangeText={setEmail}
           keyboardType="default"
         />
 
@@ -51,14 +71,14 @@ export default function ResetPassword({ navigation }) {
         {/* Success Modal */}
         <Modal
           transparent
-          animationType="fade"
+          animationType="slide"
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalBox}>
               <Text style={styles.modalText}>OTP sent successfully to:</Text>
-              <Text style={styles.modalContact}>{emailOrPhone}</Text>
+              <Text style={styles.modalContact}>{email}</Text>
 
               <TouchableOpacity style={styles.modalButton} onPress={closeSuccessModal}>
                 <Text style={styles.modalButtonText}>OK</Text>

@@ -10,11 +10,13 @@ import {
   Animated,
 } from 'react-native';
 import PrettyPinkButton from '../../components/PrettyPinkButton';
+import { supabase } from '../../../supabase';
 
 export default function OTPVerification({ route, navigation }) {
-  const { contact } = route.params;
+  const { contact } = route.params; //the email is paased here 
   const OTP_LENGTH = 6;
   const [otp, setOtp] = useState(new Array(OTP_LENGTH).fill(''));
+  const {loading, setLoading} = useState(false);
   const inputsRef = useRef([]);
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -46,15 +48,31 @@ export default function OTPVerification({ route, navigation }) {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const enteredOtp = otp.join('');
     if (enteredOtp.length < OTP_LENGTH) {
       Alert.alert('Invalid OTP', 'Please enter the full 6-digit OTP.');
       return;
     }
-    console.log('Verifying OTP:', enteredOtp);
-    Alert.alert('OTP Verified', 'You can now reset your password.');
-    navigation.replace('NewPassword');
+
+    setLoading(true); 
+
+    //verify with OTP with supabase
+    const {data,error} = await supabase.auth.verifyOtp({
+      email:contact,
+      token: enteredOtp,
+      type:'recovery' //this type is crucial for password reset
+    })
+
+    if(error) {
+      Alert.alert('Verification failed', error)
+    }else{
+      //on success the user temporarily authenticated and can reset their password
+      Alert.alert('OTP Verified','You can now set new password')
+      //navigate to new password screen
+      navigation.navigate('NewPassword');
+    }
+    setLoading(false)
   };
 
   return (
@@ -90,6 +108,7 @@ export default function OTPVerification({ route, navigation }) {
           <PrettyPinkButton title="Verify OTP" onPress={handleVerify} />
         </Animated.View>
       </View>
+      <PrettyPinkButton title="Back" onPress={() => navigation.goBack()} />
     </TouchableWithoutFeedback>
   );
 }
