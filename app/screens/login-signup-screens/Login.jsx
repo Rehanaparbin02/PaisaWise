@@ -32,7 +32,7 @@ export default function Login({ navigation }) {
     })
     if (error) {
       console.log('Error during login:', error);
-      Alert.alert('Loging In Failed: ');
+      Alert.alert('Loging In Failed: ', error);
       return;
     }
 

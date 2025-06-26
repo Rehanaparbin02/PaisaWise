@@ -1,6 +1,7 @@
 {
   "expo": {
     "scheme": "paisawise",
+    "deepLinks": ["paisawise://"],
     "name": "PaisaWise",
     "slug": "PaisaWise",
     "version": "1.0.0",
