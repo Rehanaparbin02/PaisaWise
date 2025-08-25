@@ -13,6 +13,7 @@ import MonthlyCategoryBreakdown from '../../components/MonthlyCategoryBreakdown'
 export default function HomeScreen() {
   const navigation = useNavigation();
   const [budgetRange, setBudgetRange] = useState([20000, 80000]);
+  const [income, setIncome] = useState(50000);
 
   const restartOnboarding = async () => {
     await removeItem('onboarded');
@@ -26,18 +27,21 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.mainContainer}>
-      <Header navigation={navigation} />
       <ScrollView
-        style={{ flex: 1 }}
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Header is now inside ScrollView to make it non-sticky */}
+        <Header navigation={navigation} />
+        
         <BudgetCard
           title="Monthly Budget Range"
           subtitle="October"
           budgetRange={budgetRange}
           onBudgetChange={setBudgetRange}
-          income={98000}
+          income={income}
+          onIncomeChange={setIncome}
           expense={8000}
         />
 
@@ -85,15 +89,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FBF6E2',
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
-    paddingVertical: 20,
-    paddingHorizontal: 10,
     paddingBottom: 160, // space for bottom tabs / FAB
   },
   miniCardsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 20,
+    paddingHorizontal: 10,
   },
   restartButton: {
     backgroundColor: '#ffbe0b',
@@ -102,6 +108,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignSelf: 'center',
     marginTop: 30,
+    marginHorizontal: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

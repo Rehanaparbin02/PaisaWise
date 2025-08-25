@@ -96,7 +96,7 @@ export default function Transaction() {
           onPress={() => navigation.navigate('SeeAllTransactions', { transactions })}
           activeOpacity={0.8}
         >
-          <Text style={styles.seeAllText}>See All Transactions</Text>
+          <Text style={styles.seeAllText}>See All</Text>
         </TouchableOpacity>
       )}
 
@@ -114,6 +114,7 @@ export default function Transaction() {
             <TextInput
               style={styles.input}
               placeholder="Description"
+              placeholderTextColor="#999"
               value={descInput}
               onChangeText={setDescInput}
               autoFocus
@@ -121,6 +122,7 @@ export default function Transaction() {
             <TextInput
               style={styles.input}
               placeholder="Amount (₹)"
+              placeholderTextColor="#999"
               value={amountInput}
               onChangeText={setAmountInput}
               keyboardType="numeric"
@@ -151,10 +153,12 @@ export default function Transaction() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginRight:12,
+    marginLeft:12,
     marginTop: 12,
     padding: 20,
-    backgroundColor: '#000000',
-    borderRadius: 25
+    backgroundColor: '#1a1326', // soft dark purple/charcoal
+    borderRadius: 20,
   },
   header: {
     flexDirection: 'row',
@@ -163,38 +167,33 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#F11A7B',
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#FFD700', // gold title
   },
   addButton: {
-    backgroundColor: '#007aff',
+    backgroundColor: '#2a1b3d',
     paddingVertical: 6,
     paddingHorizontal: 16,
     borderRadius: 25,
-    elevation: 3,
-    shadowColor: '#007aff',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.3)',
   },
   addButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
+    color: '#FFD700',
+    fontWeight: '600',
+    fontSize: 15,
   },
   transactionCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#fffdf8', // light ivory card
     padding: 15,
     borderRadius: 12,
     marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    elevation: 2,
   },
   transactionLeft: {
     flexShrink: 1,
@@ -206,28 +205,29 @@ const styles = StyleSheet.create({
   },
   transactionDate: {
     fontSize: 13,
-    color: '#999',
+    color: '#777',
     marginTop: 4,
   },
   transactionAmount: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
-    color: '#007aff',
+    color: '#B8860B', // dark gold for amount
     alignSelf: 'center',
   },
   seeAllButton: {
     marginTop: -25,
     alignSelf: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    backgroundColor: '#007aff',
-    borderRadius: 25,
-    elevation: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    backgroundColor: '#2a1b3d',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.3)',
   },
   seeAllText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
+    color: '#FFD700',
+    fontWeight: '600',
+    fontSize: 15,
   },
   modalOverlay: {
     flex: 1,
@@ -236,45 +236,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#fffdf8',
     borderRadius: 14,
     padding: 25,
-    elevation: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     marginBottom: 15,
-    color: '#333',
+    color: '#222',
+    textAlign: 'center',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: 15,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    marginBottom: 12,
     color: '#222',
+    backgroundColor: '#fff',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
   modalButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 30,
-    marginLeft: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: 20,
+    marginLeft: 10,
   },
   cancelButton: {
     backgroundColor: '#eee',
   },
   addButtonModal: {
-    backgroundColor: '#007aff',
+    backgroundColor: '#2a1b3d',
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,0,0.3)',
   },
   modalButtonText: {
-    fontWeight: '700',
-    fontSize: 16,
+    fontWeight: '600',
+    fontSize: 15,
+    color: '#333',
   },
 });

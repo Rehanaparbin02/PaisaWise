@@ -8,7 +8,6 @@ export default function MonthlyCategoryBreakdown({ transactions = [], showAll = 
   if (!Array.isArray(transactions)) return null;
 
   const groupedByMonth = {};
-
   transactions.forEach((tx) => {
     const month = moment(tx.date).format('MMMM YYYY');
     if (!groupedByMonth[month]) groupedByMonth[month] = {};
@@ -25,7 +24,9 @@ export default function MonthlyCategoryBreakdown({ transactions = [], showAll = 
       <View style={styles.headerRow}>
         <Text style={styles.header}>Monthly Category Breakdown</Text>
         {!showAll && (
-          <TouchableOpacity onPress={() => navigation.navigate('FullBreakdown', { transactions })}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('FullBreakdown', { transactions })}
+          >
             <Text style={styles.seeAll}>See All</Text>
           </TouchableOpacity>
         )}
@@ -49,8 +50,13 @@ export default function MonthlyCategoryBreakdown({ transactions = [], showAll = 
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#fefefe',
-    marginTop: 10,
+    backgroundColor: '#fafafa', // light neutral for sunlight readability
+    marginTop: 12,
+    marginRight: 12,
+    marginLeft: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
   },
   headerRow: {
     flexDirection: 'row',
@@ -59,28 +65,29 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   header: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#333',
+    color: '#333', // dark readable text
   },
   seeAll: {
     fontSize: 14,
-    color: '#007aff',
+    color: '#6a1b9a', // muted purple accent
     fontWeight: '600',
   },
   monthBlock: {
-    marginBottom: 20,
+    marginBottom: 18,
   },
   month: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
-    color: '#007aff',
+    marginBottom: 6,
+    color: '#444', // neutral strong text
   },
   categoryItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 6,
+    paddingVertical: 2,
   },
   category: {
     fontSize: 15,
@@ -88,6 +95,7 @@ const styles = StyleSheet.create({
   },
   amount: {
     fontWeight: '600',
-    color: '#333',
+    fontSize: 15,
+    color: '#b8860b', // muted gold for values
   },
 });

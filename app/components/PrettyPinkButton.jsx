@@ -2,7 +2,7 @@
 import React, { useRef } from 'react';
 import { Animated, TouchableOpacity, Text, StyleSheet, Easing } from 'react-native';
 
-export default function PrettyPinkButton({ title, onPress }) {
+export default function PrettyPinkButton({ title, onPress, style }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -30,7 +30,7 @@ export default function PrettyPinkButton({ title, onPress }) {
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={onPress}
-        style={styles.pinkButton}
+        style={[styles.pinkButton, style]}
       >
         <Text style={styles.buttonText}>{title}</Text>
       </TouchableOpacity>
