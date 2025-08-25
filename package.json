@@ -9,16 +9,19 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@azure/cognitiveservices-computervision": "^8.2.0",
     "@expo/vector-icons": "^14.1.0",
-    "@lottiefiles/dotlottie-react": "^0.6.5",
     "@ptomasroos/react-native-multi-slider": "^2.2.2",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/slider": "^4.5.6",
     "@react-native-firebase/app": "^22.2.1",
+    "@react-native-google-signin/google-signin": "^15.0.0",
+    "@react-native-ml-kit/text-recognition": "^1.5.2",
     "@react-navigation/bottom-tabs": "^7.3.13",
     "@react-navigation/native": "^7.1.9",
     "@supabase/supabase-js": "^2.50.0",
-    "expo": "^53.0.12",
+    "aws-sdk": "^2.1692.0",
+    "expo": "53.0.20",
     "expo-auth-session": "~6.2.0",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.6",
@@ -44,7 +47,8 @@
     "react-native-ui-lib": "^7.43.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "^0.20.0",
-    "rn-range-slider": "^2.2.2"
+    "rn-range-slider": "^2.2.2",
+    "undefined": "\\"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

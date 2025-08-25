@@ -27,3 +27,11 @@ AppState.addEventListener('change', (state) => {
     supabase.auth.stopAutoRefresh()
   }
 })
+
+
+
+//for getting SHA fingerprint :-
+//cd android; &"C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -keystore ./app/debug.keystore -list -v
+
+//client id:-
+//1022584890598-ta4f2g85s5b9gnki68h8m4p25ob78i0i.apps.googleusercontent.com

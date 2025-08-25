@@ -1,7 +1,9 @@
 {
   "expo": {
     "scheme": "paisawise",
-    "deepLinks": ["paisawise://"],
+    "deepLinks": [
+      "paisawise://"
+    ],
     "name": "PaisaWise",
     "slug": "PaisaWise",
     "version": "1.0.0",
@@ -32,13 +34,19 @@
               "scheme": "paisawise"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-router",
+      "@react-native-google-signin/google-signin"
+    ]
   }
 }

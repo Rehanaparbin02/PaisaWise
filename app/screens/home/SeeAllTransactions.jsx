@@ -21,8 +21,13 @@ export default function SeeAllTransactions() {
         <Text style={styles.transactionDesc}>{item.description}</Text>
         <Text style={styles.transactionDate}>{item.date}</Text>
       </View>
-      <Text style={[styles.transactionAmount, item.amount < 0 ? styles.negativeAmount : styles.positiveAmount]}>
-        {item.amount < 0 ? '-' : ''}₹{Math.abs(item.amount).toFixed(2)}
+      <Text
+        style={[
+          styles.transactionAmount,
+          item.amount < 0 ? styles.negativeAmount : styles.positiveAmount,
+        ]}
+      >
+        {item.amount < 0 ? '-' : '+'}₹{Math.abs(item.amount).toFixed(2)}
       </Text>
     </View>
   );
@@ -31,11 +36,14 @@ export default function SeeAllTransactions() {
     <View style={styles.container}>
       {/* Header with back */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>All Transactions</Text>
-        <View style={{ width: 60 }} /> {/* placeholder to balance back button */}
+        <View style={{ width: 60 }} /> {/* placeholder */}
       </View>
 
       <FlatList
@@ -52,63 +60,62 @@ export default function SeeAllTransactions() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#1a1326', // soft dark purple
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 45,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 18,
   },
   backButton: {
     width: 60,
   },
   backText: {
     fontSize: 18,
-    color: '#007aff',
+    color: '#FFD700', // gold back button
+    fontWeight: '600',
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#222',
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFD700', // gold title
   },
   transactionCard: {
-    backgroundColor: '#fff',
-    padding: 18,
-    borderRadius: 14,
-    marginBottom: 14,
+    backgroundColor: '#fffdf8', // ivory card
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    elevation: 2,
   },
   transactionLeft: {
     flexShrink: 1,
   },
   transactionDesc: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#222',
   },
   transactionDate: {
     fontSize: 13,
-    color: '#999',
-    marginTop: 6,
+    color: '#777',
+    marginTop: 4,
   },
   transactionAmount: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '700',
     alignSelf: 'center',
   },
   positiveAmount: {
-    color: '#007aff',
+    color: '#B8860B', // dark gold for income
   },
   negativeAmount: {
-    color: '#ff4d4d',
+    color: '#C0392B', // muted red for expense
   },
 });
