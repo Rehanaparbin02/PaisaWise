@@ -9,7 +9,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Chart from '../statistics/charts/Charts';
+import Chart from './charts/Charts';
 import { AntDesign } from '@expo/vector-icons';
 
 const filterOptions = ['Last 30 Days', 'Last 3 Months', 'Yearly'];

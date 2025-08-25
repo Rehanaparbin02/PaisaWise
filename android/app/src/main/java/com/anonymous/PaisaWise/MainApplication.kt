@@ -1,4 +1,4 @@
-package com.anonymous.TaskMaster
+package com.anonymous.PaisaWise
 
 import android.app.Application
 import android.content.res.Configuration

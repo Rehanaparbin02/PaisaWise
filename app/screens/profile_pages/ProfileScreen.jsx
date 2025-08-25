@@ -4,11 +4,12 @@ import {
   Switch, TextInput, ScrollView, Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-
-// To-DO
-// 1) Add Back Button on the Profile Page
+import { useNavigation } from '@react-navigation/native';
+import { supabase } from '../../../supabase'; // Adjust this path as needed
 
 export default function ProfileScreen() {
+  const navigation = useNavigation();
+
   const [darkMode, setDarkMode] = useState(false);
   const [name, setName] = useState('Rehana Parbin');
   const [bio, setBio] = useState('Passionate about tech, design & nature 🌿');
@@ -25,7 +26,27 @@ export default function ProfileScreen() {
     Alert.alert("Change Profile Picture", "This would open an image picker.");
   };
 
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      Alert.alert('Logout Error', error.message);
+    } else {
+      Alert.alert('Logged Out', 'You have been successfully logged out.');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
+  };
+
   const themed = (light, dark) => (darkMode ? dark : light);
+
+  const settingsOptions = [
+    { label: 'Privacy Settings', icon: 'lock-closed-outline' },
+    { label: 'Saved Items', icon: 'bookmark-outline' },
+    { label: 'Support & Feedback', icon: 'chatbubbles-outline' },
+    { label: 'Logout', icon: 'log-out-outline', danger: true, action: handleLogout },
+  ];
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: themed('#F9F6F1', '#021526') }]}>
@@ -39,13 +60,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <View style={{ flex: 1, marginLeft: 16 }}>
-          {/* <TextInput
-            value={name}
-            onChangeText={setName}
-            style={[styles.name, { color: themed('#021526', '#ECCEAE') }]}
-            placeholder="Your Name"
-            placeholderTextColor={themed('#aaa', '#888')}
-          /> */}<Text style={styles.name}>Rehana Parbin</Text>
+          <Text style={styles.name}>Rehana Parbin</Text>
           <TextInput
             value={bio}
             onChangeText={setBio}
@@ -54,15 +69,6 @@ export default function ProfileScreen() {
             placeholder="Tell us about yourself"
             placeholderTextColor={themed('#aaa', '#888')}
           />
-          {/* <TextInput
-            value={email}
-            onChangeText={setEmail}
-            style={[styles.email, { color: themed('#444', '#ECCEAE') }]}
-            keyboardType="email-address"
-            placeholder="Email"
-            placeholderTextColor={themed('#aaa', '#888')}
-          /> */}
-
           <Text style={styles.email}>rehana.parbin@example.com</Text>
         </View>
       </View>
@@ -104,13 +110,12 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {[
-          { label: 'Privacy Settings', icon: 'lock-closed-outline' },
-          { label: 'Saved Items', icon: 'bookmark-outline' },
-          { label: 'Support & Feedback', icon: 'chatbubbles-outline' },
-          { label: 'Logout', icon: 'log-out-outline', danger: true },
-        ].map((item, idx) => (
-          <TouchableOpacity key={idx} style={styles.settingRow}>
+        {settingsOptions.map((item, idx) => (
+          <TouchableOpacity
+            key={idx}
+            style={styles.settingRow}
+            onPress={item.action || (() => Alert.alert(item.label, 'Feature coming soon'))}
+          >
             <Text style={[styles.settingLabel, { color: item.danger ? '#DC143C' : themed('#021526', '#ECCEAE') }]}>
               {item.label}
             </Text>
@@ -165,20 +170,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 30,
   },
-  // statsRow: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-around',
-  // },
-  // statItem: {
-  //   alignItems: 'center',
-  // },
-  // statNumber: {
-  //   fontSize: 22,
-  //   fontWeight: '700',
-  // },
-  // statLabel: {
-  //   fontSize: 12,
-  // },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',

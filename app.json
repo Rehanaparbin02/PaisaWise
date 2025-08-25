@@ -1,6 +1,9 @@
 {
   "expo": {
     "scheme": "paisawise",
+    "deepLinks": [
+      "paisawise://"
+    ],
     "name": "PaisaWise",
     "slug": "PaisaWise",
     "version": "1.0.0",
@@ -22,13 +25,28 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.PaisaWise"
+      "package": "com.anonymous.PaisaWise",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "paisawise"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/icon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "@react-native-google-signin/google-signin"
     ]
   }
 }
