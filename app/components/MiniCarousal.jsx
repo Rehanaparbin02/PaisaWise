@@ -11,25 +11,25 @@ import {
   TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function MiniCarousal() {
   const navigation = useNavigation();
 
-  const BACKGROUND_COLORS = [
-    '#FFCDD2', '#FFF59D', '#E1BEE7', '#C8E6C9', '#B2EBF2',
-    '#CE93D8', '#90CAF9', '#FF8A80', '#A5D6A7', '#9575CD',
+  // Softer, eye-friendly light gradients
+  const CARD_GRADIENTS = [
+    ['#fdfcfb', '#e2d1c3'], // ivory → champagne beige
+    ['#fafafaff', '#eaeaeaff'], // light gray → softer gray
+    ['#fffaf0', '#f0e6d2'], // off-white → warm beige
   ];
 
   const [cards, setCards] = useState([
     { title: 'Card 0', subtitle: 'Subtitle 0' },
     { title: 'Card 1', subtitle: 'Subtitle 1' },
     { title: 'Card 2', subtitle: 'Subtitle 2' },
-    { title: 'Card 3', subtitle: 'Subtitle 3' },
-    { title: 'Card 4', subtitle: 'Subtitle 4' },
-    { title: 'Card 5', subtitle: 'Subtitle 5' },
-    { title: 'Card 6', subtitle: 'Subtitle 6' },
   ]);
 
   const [modalVisible, setModalVisible] = React.useState(false);
@@ -52,26 +52,34 @@ export default function MiniCarousal() {
 
   const renderItem = ({ item, index }) => {
     if (index === 0) {
+      // Add Card tile
       return (
         <TouchableOpacity
-          style={[styles.card, styles.addCard]}
+          style={styles.addCardWrapper}
           onPress={() => setModalVisible(true)}
+          activeOpacity={0.8}
         >
-          <Text style={styles.addCardText}>+ Add Card</Text>
+          <View style={styles.addCard}>
+            <Ionicons name="add" size={28} color="#B8860B" />
+            <Text style={styles.addCardText}>Add</Text>
+          </View>
         </TouchableOpacity>
       );
     }
+
     const card = cardsForCarousel[index - 1];
+    const gradientColors = CARD_GRADIENTS[(index - 1) % CARD_GRADIENTS.length];
+
     return (
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: BACKGROUND_COLORS[(index - 1) % BACKGROUND_COLORS.length] },
-        ]}
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.card}
       >
         <Text style={styles.cardTitle}>{card.title}</Text>
         <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
-      </View>
+      </LinearGradient>
     );
   };
 
@@ -100,7 +108,7 @@ export default function MiniCarousal() {
         </TouchableOpacity>
       )}
 
-      {/* Modal for adding new card */}
+      {/* Modal */}
       <Modal
         animationType="slide"
         transparent
@@ -113,6 +121,7 @@ export default function MiniCarousal() {
             <TextInput
               style={styles.input}
               placeholder="Title"
+              placeholderTextColor="#999"
               value={titleInput}
               onChangeText={setTitleInput}
               autoFocus
@@ -120,6 +129,7 @@ export default function MiniCarousal() {
             <TextInput
               style={styles.input}
               placeholder="Subtitle"
+              placeholderTextColor="#999"
               value={subtitleInput}
               onChangeText={setSubtitleInput}
             />
@@ -149,56 +159,68 @@ export default function MiniCarousal() {
 const styles = StyleSheet.create({
   container: {
     marginTop: 30,
-    height: 200,
+    height: 180,
   },
   flatListContent: {
     paddingHorizontal: 10,
   },
   card: {
-    width: screenWidth * 0.4,
+    width: screenWidth * 0.42,
     marginHorizontal: 10,
-    height: 140,
-    borderRadius: 12,
+    height: 130,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(184,134,11,0.3)', // subtle gold accent
+  },
+  addCardWrapper: {
+    width: screenWidth * 0.25,
+    height: 130,
+    marginHorizontal: 10,
+    borderRadius: 14,
+    overflow: 'hidden',
   },
   addCard: {
-    width: screenWidth * 0.2,
-    backgroundColor: '#ddd',
-    borderStyle: 'dashed',
-    borderWidth: 2,
-    borderColor: '#999',
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(184,134,11,0.5)',
+    borderRadius: 14,
+    backgroundColor: '#fdfcfb',
   },
   addCardText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#555',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#444',
+    marginTop: 4,
   },
   cardTitle: {
-    color: '#333',
-    fontWeight: 'bold',
-    fontSize: 18,
+    color: '#222',
+    fontWeight: '700',
+    fontSize: 16,
+    marginBottom: 4,
   },
   cardSubtitle: {
     color: '#555',
-    fontSize: 14,
-    marginTop: 5,
+    fontSize: 13,
   },
   seeAllButton: {
     position: 'absolute',
     bottom: 0,
     right: 10,
-    backgroundColor: '#333',
-    paddingVertical: 6,
+    backgroundColor: '#eee',
+    paddingVertical: 5,
     paddingHorizontal: 12,
-    borderRadius: 20,
-    elevation: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(184,134,11,0.3)',
   },
   seeAllButtonText: {
-    color: '#fff',
+    color: '#444',
     fontWeight: '600',
+    fontSize: 13,
   },
   modalOverlay: {
     flex: 1,
@@ -208,14 +230,17 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 20,
-    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(184,134,11,0.3)',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 15,
+    color: '#333',
+    textAlign: 'center',
   },
   input: {
     borderColor: '#ccc',
@@ -223,15 +248,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 15,
+    marginBottom: 12,
+    color: '#333',
+    backgroundColor: '#fafafa',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
   modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
     marginLeft: 10,
   },
@@ -239,9 +266,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
   },
   addButton: {
-    backgroundColor: '#333',
+    backgroundColor: '#b8860b',
   },
   modalButtonText: {
     fontWeight: '600',
+    color: '#333',
   },
 });

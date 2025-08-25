@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,43 @@ import {
   TextInput,
   Animated,
   TouchableOpacity,
+  Alert,
+  Dimensions,
+  Image,
 } from 'react-native';
 import PrettyPinkButton from '../../components/PrettyPinkButton';
+import { supabase } from '../../../supabase';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 
 export default function Signup({ navigation }) {
-  const slideAnim = useRef(new Animated.Value(600)).current;
+
+  WebBrowser.maybeCompleteAuthSession();
+
+  const redirectUri = AuthSession.makeRedirectUri({
+    useProxy: true,
+  })
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
+
+  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current;
+  useEffect(()=>{
+    const {data:listener} = supabase.auth.onAuthStateChange((event,session) =>{
+      if (event === 'SIGNED_IN' && session) {
+        console.log('User signed in:', session);
+        // Optionally, navigate to a new screen or perform actions
+        navigation.replace('Home');
+      }
+    })
+    return()=>{
+      listener?.subscription.unsubscribe();
+    }
+  }, [])
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -21,8 +53,118 @@ export default function Signup({ navigation }) {
     }).start();
   }, []);
 
+  const handleBack = () => {
+    navigation.replace('LoginSignupPage');
+  };
+
+  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
+
+  async function handleSignup() {
+    setLoading(true);
+
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      Alert.alert('Error', 'Please fill all the fields.');
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(email.trim())) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error('Signup error:', error.message);
+        Alert.alert('Signup Failed', error.message);
+        return;
+      }
+      const user  = data?.user;
+      if(!user) {
+        Alert.alert('Verification Needed', 'Please check your email to verify your account.');
+        return;
+      }
+
+      console.log('User: ', user);
+      const {error: insertError} = await supabase
+        .from('user_data')
+        .insert([
+          {
+            user_id: user.id,
+            email
+          }
+        ])
+
+        if(insertError){
+          throw insertError;
+        }
+
+
+      console.log('Signup success:', data);
+      Alert.alert('Success', 'Account created successfully. Please check your email (if confirmation enabled).');
+
+      // Optional cleanup
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+
+      // Navigate to Login
+      navigation.replace('Login');
+    } catch (error) {
+      console.error('Unexpected signup error:', error);
+      Alert.alert('Unexpected Error', error.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+};
+
+ async function signInWithGoogle() {
+  setLoading(true);
+  const provider = 'google';
+
+  const {data,error} = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectUri,
+    }
+  })
+  if(error) {
+    console.log('OAuth error: ',error)
+    Alert.alert('OAuth Error', error);
+    setLoading(false);
+  } else {
+    console.log('OAuth flow started: ', data)
+    // Loading will be set to false when the auth state changes (SIGNED_IN)
+    // or if the user cancels the flow (which won't trigger a SIGNED_IN event).
+    // For now, it's okay to not set it to false here, as the listener handles success.
+    // If you want to handle cancellation, you'd need more complex logic.
+  }
+ }
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <PrettyPinkButton title="Back" onPress={handleBack} style={styles.backbtn} />
+
       <Text style={styles.heading}>PaisaWise</Text>
       <Text style={styles.title}>Create Your Account</Text>
 
@@ -36,29 +178,52 @@ export default function Signup({ navigation }) {
           placeholder="Email"
           placeholderTextColor="#ccc"
           keyboardType="email-address"
+          value={email}
+          autoCapitalize="none"
+          onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
           placeholderTextColor="#ccc"
           secureTextEntry
+          value={password}
+          autoCapitalize="none"
+          onChangeText={setPassword}
         />
         <TextInput
           style={styles.input}
           placeholder="Confirm Password"
           placeholderTextColor="#ccc"
           secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
         />
 
         <PrettyPinkButton
-          title="Complete Signup"
-          onPress={() => navigation.replace('Maintabs')}
+          title={loading ? 'Creating...' : 'Complete Signup'}
+          onPress={handleSignup}
+          disabled={loading}
         />
 
         <Text style={styles.orText}>OR</Text>
 
-        <TouchableOpacity style={styles.googleButton}>
-          <Text style={styles.googleButtonText}>Sign up with Google</Text>
+        {/* login with google */}
+        {/* For React Native, you need to handle deep linking + AuthSession or expo-auth-session. */}
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={signInWithGoogle}
+          disabled={loading} // Disable button when loading
+        >
+          <View style={styles.googleButtonContent}>
+            <Image
+              source={require('../../../assets/onbaording_home/google.png')}
+              style={styles.googleIcon}
+            />
+            <Text style={styles.googleButtonText}>
+              {loading ? 'Logging in...' : 'Login with Google'}
+            </Text>
+          </View>
         </TouchableOpacity>
 
         <Text style={styles.subtitleSmall}>
@@ -72,32 +237,41 @@ export default function Signup({ navigation }) {
         </Text>
       </Animated.View>
     </View>
-  );
-}
+    );
+  }
 
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+  },
+  backbtn: {
+    position: 'absolute',
+    top: 760,
+    right: 120,
+    width: 60,
+    height: 30,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    zIndex: 10,
   },
   heading: {
     fontSize: 34,
     fontWeight: 'bold',
     color: '#EB3678',
-    position: 'absolute',
-    top: 60,
+    marginTop: 90,
   },
   title: {
     fontSize: 20,
     color: '#555',
     fontWeight: '600',
-    position: 'absolute',
-    top: 105,
+    marginTop: 8,
   },
   subcontainer: {
     width: '90%',
+    marginTop: 40,
     padding: 24,
     backgroundColor: '#1C1A1A',
     borderRadius: 24,
@@ -135,7 +309,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 4, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
-    elevation: 8,
+    elevation: 6,
+  },
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 10,
   },
   googleButtonText: {
     color: '#EB3678',
@@ -143,9 +327,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   subtitleSmall: {
+    marginTop: 10,
     fontSize: 14,
     color: '#ccc',
     textAlign: 'center',
-    marginTop: 15,
   },
 });

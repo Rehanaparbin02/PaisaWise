@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   Image,
   Animated,
+  Alert,
 } from 'react-native';
 import PrettyPinkButton from '../../components/PrettyPinkButton';
+import { supabase } from '../../../supabase';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
@@ -23,13 +25,31 @@ export default function Login({ navigation }) {
     }).start();
   }, []);
 
-  const handleLogin = () => {
-    console.log('Logging in with', email, password);
-    navigation.replace('MainTabs');
+  const handleLogin = async () => {
+    const { data,error} = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+    if (error) {
+      console.log('Error during login:', error);
+      Alert.alert('Loging In Failed: ', error);
+      return;
+    }
+
+    Alert.alert(
+      'Login successful.',
+    );
+    navigation.replace('Home');
   };
+
+  const handleBack = () =>{
+    navigation.replace('LoginSignupPage');
+  }
 
   return (
     <View style={styles.container}>
+      <PrettyPinkButton title="Back"  onPress={handleBack} style={styles.backbtn}/>
+
       <Text style={styles.heading}>Welcome Back!</Text>
       <Text style={styles.subheading}>Log into your account</Text>
 
@@ -93,6 +113,19 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingHorizontal: 24,
   },
+
+  backbtn:{
+    position: 'absolute',
+    top: 680 ,
+    left: -170,
+    width: 50,
+    height: 20,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+
   heading: {
     fontSize: 30,
     fontWeight: 'bold',

@@ -5,11 +5,21 @@ import { useEffect, useRef } from 'react';
 import React from 'react';
 
 export default function LoginSignupPage() {
+
   const navigation = useNavigation();
+
+
   const handleLogin = () => {
     console.log('Logging in');
     navigation.replace('Login');
   };
+
+
+  const handleSignup = () =>{
+    console.log('signing up');
+    navigation.replace('Signup')
+  }
+
   const scaleAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
       Animated.spring(scaleAnim, {
@@ -22,10 +32,11 @@ export default function LoginSignupPage() {
     <View style={styles.container}>
       <Image source={require('../../../assets/login.png')} style={styles.loginImage} />
       <Animated.View style={[styles.headerContainer, {transform: [{ scale: scaleAnim }]}]}>
-        <Text style={styles.header}>LoginSignupPage</Text>
-        <PrettyPinkButton title="Signup" onPress={handleLogin} style={{width: 200}} />
+        <Text style={styles.header}>Welcome!</Text>
+        <Text style={{marginTop: 10, padding: 8, width: 280, textAlign: 'center', fontSize: 12}}>To make better use of your money, start keeping track of it.</Text>
+        <PrettyPinkButton title="Signup" onPress={handleSignup} style={{width: 200}} />
         <Text>OR</Text>
-        <PrettyPinkButton title="Login" onPress={handleLogin} />
+        <PrettyPinkButton title="Login" onPress={handleLogin} style={{width: 200}}/>
       </Animated.View>
     </View>
   )
