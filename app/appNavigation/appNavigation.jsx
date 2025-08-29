@@ -11,7 +11,7 @@ import LoginSignupPage from '../screens/login-signup-screens/LoginSignupPage';
 import Login from '../screens/login-signup-screens/Login';
 import ResetPassword from '../screens/login-signup-screens/ResetPassword';
 import OTPVerification from '../screens/login-signup-screens/OTPVerification';
-
+import ExpenseEntry from '../screens/ExpenseEntry';
 import MiniCarousal from '../components/MiniCarousal';
 import AllCardsScreen from '../screens/home/AllCardsScreen';
 import FullBreakdownScreen from '../screens/home/FullBreakdownScreen';
@@ -186,7 +186,11 @@ export default function AppNavigation() {
         component={Expenses}
         options={{ headerShown: true, title: 'Expenses' }}
       />
-
+      <Stack.Screen
+          name="ExpenseEntry"
+          component={ExpenseEntry}
+          options={{ headerShown: false }} // We'll use a custom header in the component
+        />
       <Stack.Screen
         name="MiniCarousal"
         component={MiniCarousal}
