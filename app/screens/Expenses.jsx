@@ -11,12 +11,18 @@ import {
   Modal,
   TextInput,
   FlatList,
+  Share,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Expenses = () => {
+const { width } = Dimensions.get('window');
+
+const Expenses = React.memo(() => {
+  const navigation = useNavigation();
   const [expenses, setExpenses] = useState([]);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -24,6 +30,9 @@ const Expenses = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [showSortModal, setShowSortModal] = useState(false);
 
   const categories = [
     'All', 'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
@@ -31,60 +40,79 @@ const Expenses = () => {
     'Business', 'Personal Care', 'Home', 'Insurance', 'Other'
   ];
 
-  // Load expenses from storage
-  const loadExpenses = async () => {
+  const sortExpenses = useCallback((expenseList, criteria, order) => {
+    return [...expenseList].sort((a, b) => {
+      let comparison = 0;
+      switch (criteria) {
+        case 'date':
+          comparison = new Date(b.created_at || b.date) - new Date(a.created_at || a.date);
+          break;
+        case 'amount':
+          comparison = (b.total_amount || 0) - (a.total_amount || 0);
+          break;
+        case 'merchant':
+          comparison = (a.merchant_name || '').localeCompare(b.merchant_name || '');
+          break;
+        case 'category':
+          comparison = (a.category || '').localeCompare(b.category || '');
+          break;
+        default:
+          comparison = new Date(b.created_at || b.date) - new Date(a.created_at || a.date);
+      }
+      return order === 'desc' ? comparison : -comparison;
+    });
+  }, []);
+
+  const applyFiltersAndSort = useCallback((expenseList, category, search, criteria, order) => {
+    let filtered = expenseList;
+    if (category !== 'All') {
+      filtered = filtered.filter(expense => expense.category === category);
+    }
+    if (search.trim() !== '') {
+      const query = search.toLowerCase();
+      filtered = filtered.filter(expense =>
+        expense.merchant_name?.toLowerCase().includes(query) ||
+        expense.category?.toLowerCase().includes(query) ||
+        expense.line_items?.some(item =>
+          (typeof item === 'string' ? item : item.name)?.toLowerCase().includes(query)
+        ) ||
+        expense.total_amount?.toString().includes(query.replace('$', ''))
+      );
+    }
+    const sorted = sortExpenses(filtered, criteria, order);
+    setFilteredExpenses(sorted);
+  }, [sortExpenses]);
+
+  const loadExpenses = useCallback(async () => {
     try {
+      setRefreshing(true);
       const storedExpenses = await AsyncStorage.getItem('expenses');
       if (storedExpenses) {
         const parsedExpenses = JSON.parse(storedExpenses);
-        // Sort by date, newest first
-        const sortedExpenses = parsedExpenses.sort((a, b) => 
-          new Date(b.created_at) - new Date(a.created_at)
-        );
-        setExpenses(sortedExpenses);
-        filterExpenses(sortedExpenses, selectedCategory, searchQuery);
+        setExpenses(parsedExpenses);
+        applyFiltersAndSort(parsedExpenses, selectedCategory, searchQuery, sortBy, sortOrder);
+      } else {
+        setExpenses([]);
+        setFilteredExpenses([]);
       }
     } catch (error) {
       console.error('Failed to load expenses:', error);
       Alert.alert('Error', 'Failed to load expenses');
+    } finally {
+      setRefreshing(false);
     }
-  };
+  }, [selectedCategory, searchQuery, sortBy, sortOrder, applyFiltersAndSort]);
 
-  // Filter expenses based on category and search
-  const filterExpenses = (expenseList, category, search) => {
-    let filtered = expenseList;
+  useEffect(() => {
+    applyFiltersAndSort(expenses, selectedCategory, searchQuery, sortBy, sortOrder);
+  }, [expenses, selectedCategory, searchQuery, sortBy, sortOrder, applyFiltersAndSort]);
 
-    // Filter by category
-    if (category !== 'All') {
-      filtered = filtered.filter(expense => expense.category === category);
-    }
+  useFocusEffect(
+    useCallback(() => {
+      loadExpenses();
+    }, [loadExpenses])
+  );
 
-    // Filter by search query
-    if (search.trim() !== '') {
-      const query = search.toLowerCase();
-      filtered = filtered.filter(expense => 
-        expense.merchant_name?.toLowerCase().includes(query) ||
-        expense.category?.toLowerCase().includes(query) ||
-        expense.line_items?.some(item => item.toLowerCase().includes(query))
-      );
-    }
-
-    setFilteredExpenses(filtered);
-  };
-
-  // Handle category filter change
-  const handleCategoryChange = (category) => {
-    setSelectedCategory(category);
-    filterExpenses(expenses, category, searchQuery);
-  };
-
-  // Handle search
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    filterExpenses(expenses, selectedCategory, query);
-  };
-
-  // Handle expense deletion
   const handleDeleteExpense = async (expenseId) => {
     Alert.alert(
       'Delete Expense',
@@ -99,8 +127,8 @@ const Expenses = () => {
               const updatedExpenses = expenses.filter(exp => exp.id !== expenseId);
               await AsyncStorage.setItem('expenses', JSON.stringify(updatedExpenses));
               setExpenses(updatedExpenses);
-              filterExpenses(updatedExpenses, selectedCategory, searchQuery);
               setShowDetailModal(false);
+              Alert.alert('Success', 'Expense deleted successfully');
             } catch (error) {
               Alert.alert('Error', 'Failed to delete expense');
             }
@@ -110,28 +138,43 @@ const Expenses = () => {
     );
   };
 
-  // Refresh expenses
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadExpenses();
-    setRefreshing(false);
-  }, [selectedCategory, searchQuery]);
+  const handleExportExpenses = async () => {
+    try {
+      if (filteredExpenses.length === 0) {
+        Alert.alert('No Data', 'No expenses to export');
+        return;
+      }
+      const csvHeader = 'Date,Merchant,Category,Amount,Items,Confidence\n';
+      const csvData = filteredExpenses.map(expense => {
+        const date = formatDate(expense.date || expense.created_at);
+        const merchant = `"${(expense.merchant_name || 'Unknown').replace(/"/g, '""')}"`;
+        const category = `"${(expense.category || 'Other').replace(/"/g, '""')}"`;
+        const amount = (expense.total_amount || 0).toFixed(2);
+        const items = `"${(expense.line_items || [])
+          .map(i => typeof i === 'string' ? i : i.name)
+          .join(';')
+          .replace(/"/g, '""')}"`;
+        const confidence = expense.confidence ? Math.round(expense.confidence * 100) + '%' : 'N/A';
+        return `${date},${merchant},${category},${amount},${items},${confidence}`;
+      }).join('\n');
+      const csvContent = csvHeader + csvData;
 
-  // Load expenses when screen focuses
-  useFocusEffect(
-    useCallback(() => {
-      loadExpenses();
-    }, [])
-  );
+      await Share.share({
+        message: csvContent,
+        title: 'Expense Report',
+        subject: `Expense Report - ${filteredExpenses.length} expenses`
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export expenses');
+    }
+  };
 
-  // Get confidence color based on score
   const getConfidenceColor = (confidence) => {
     if (confidence >= 0.8) return '#4CAF50';
     if (confidence >= 0.6) return '#FF9800';
     return '#F44336';
   };
 
-  // Get category icon
   const getCategoryIcon = (category) => {
     const iconMap = {
       'Food & Dining': 'restaurant',
@@ -151,12 +194,14 @@ const Expenses = () => {
     return iconMap[category] || 'ellipsis-horizontal';
   };
 
-  // Calculate total for filtered expenses
   const getTotalAmount = () => {
     return filteredExpenses.reduce((sum, expense) => sum + (expense.total_amount || 0), 0);
   };
 
-  // Format date
+  const getAverageAmount = () => {
+    return filteredExpenses.length > 0 ? getTotalAmount() / filteredExpenses.length : 0;
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Date not available';
     const date = new Date(dateString);
@@ -167,7 +212,19 @@ const Expenses = () => {
     });
   };
 
-  // Render expense item
+  const getRelativeTime = (dateString) => {
+    if (!dateString) return '';
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 48) return 'Yesterday';
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    return formatDate(dateString);
+  };
+
   const renderExpenseItem = ({ item }) => (
     <TouchableOpacity
       style={styles.expenseCard}
@@ -179,20 +236,20 @@ const Expenses = () => {
     >
       <View style={styles.expenseHeader}>
         <View style={styles.merchantContainer}>
-          <Ionicons 
-            name={getCategoryIcon(item.category)} 
-            size={24} 
-            color="#F73D93" 
+          <Ionicons
+            name={getCategoryIcon(item.category)}
+            size={24}
+            color="#F73D93"
             style={styles.categoryIcon}
           />
           <View style={styles.merchantInfo}>
             <Text style={styles.merchantName} numberOfLines={1}>
               {item.merchant_name || 'Unknown Merchant'}
             </Text>
-            <Text style={styles.categoryText}>{item.category}</Text>
+            <Text style={styles.categoryText}>{item.category || 'Other'}</Text>
           </View>
         </View>
-        
+
         <View style={styles.amountContainer}>
           <Text style={styles.amountText}>
             ${(item.total_amount || 0).toFixed(2)}
@@ -212,23 +269,28 @@ const Expenses = () => {
 
       <View style={styles.expenseFooter}>
         <Text style={styles.dateText}>
-          {formatDate(item.date || item.created_at)}
+          {getRelativeTime(item.created_at || item.date)}
         </Text>
-        
-        {item.processed_by === 'ocr_llm' && (
-          <View style={styles.ocrBadge}>
-            <Ionicons name="camera" size={12} color="#007AFF" />
-            <Text style={styles.ocrBadgeText}>OCR</Text>
-          </View>
-        )}
+        <View style={styles.badgeContainer}>
+          {item.processed_by === 'ocr_llm' && (
+            <View style={styles.ocrBadge}>
+              <Ionicons name="camera" size={12} color="#007AFF" />
+              <Text style={styles.ocrBadgeText}>OCR</Text>
+            </View>
+          )}
+          {item.line_items && item.line_items.length > 0 && (
+            <View style={styles.itemsBadge}>
+              <Text style={styles.itemsBadgeText}>{item.line_items.length} items</Text>
+            </View>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
 
-  // Render category filter
   const renderCategoryFilter = () => (
-    <ScrollView 
-      horizontal 
+    <ScrollView
+      horizontal
       showsHorizontalScrollIndicator={false}
       style={styles.categoryFilter}
       contentContainerStyle={styles.categoryFilterContent}
@@ -240,7 +302,7 @@ const Expenses = () => {
             styles.categoryButton,
             selectedCategory === category && styles.selectedCategoryButton
           ]}
-          onPress={() => handleCategoryChange(category)}
+          onPress={() => setSelectedCategory(category)}
         >
           <Text style={[
             styles.categoryButtonText,
@@ -253,64 +315,140 @@ const Expenses = () => {
     </ScrollView>
   );
 
+  const renderSortModal = () => (
+    <Modal
+      visible={showSortModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowSortModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.sortModalContainer}>
+          <View style={styles.sortModalHeader}>
+            <Text style={styles.sortModalTitle}>Sort Expenses</Text>
+            <TouchableOpacity onPress={() => setShowSortModal(false)}>
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+          {[
+            { label: 'Date (Newest First)', criteria: 'date', order: 'desc' },
+            { label: 'Date (Oldest First)', criteria: 'date', order: 'asc' },
+            { label: 'Amount (Highest First)', criteria: 'amount', order: 'desc' },
+            { label: 'Amount (Lowest First)', criteria: 'amount', order: 'asc' },
+            { label: 'Merchant (A-Z)', criteria: 'merchant', order: 'asc' },
+            { label: 'Category (A-Z)', criteria: 'category', order: 'asc' },
+          ].map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.sortOption,
+                sortBy === option.criteria && sortOrder === option.order && styles.selectedSortOption
+              ]}
+              onPress={() => {
+                setSortBy(option.criteria);
+                setSortOrder(option.order);
+                setShowSortModal(false);
+              }}
+            >
+              <Text style={[
+                styles.sortOptionText,
+                sortBy === option.criteria && sortOrder === option.order && styles.selectedSortOptionText
+              ]}>
+                {option.label}
+              </Text>
+              {sortBy === option.criteria && sortOrder === option.order && (
+                <Ionicons name="checkmark" size={20} color="#F73D93" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="receipt-outline" size={64} color="#ccc" />
+      <Text style={styles.emptyTitle}>No expenses found</Text>
+      <Text style={styles.emptySubtitle}>
+        {searchQuery || selectedCategory !== 'All'
+          ? 'Try adjusting your filters'
+          : 'Start by scanning a receipt!'}
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Expenses</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Expenses</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => setShowSortModal(true)} style={styles.headerButton}>
+              <Ionicons name="swap-vertical" size={24} color="#F73D93" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleExportExpenses} style={styles.headerButton}>
+              <Ionicons name="share" size={24} color="#F73D93" />
+            </TouchableOpacity>
+          </View>
+        </View>
         <View style={styles.summaryContainer}>
-          <Text style={styles.summaryLabel}>Total: </Text>
-          <Text style={styles.summaryAmount}>${getTotalAmount().toFixed(2)}</Text>
-          <Text style={styles.summaryCount}>({filteredExpenses.length} items)</Text>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Total</Text>
+              <Text style={styles.summaryAmount}>${getTotalAmount().toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Average</Text>
+              <Text style={styles.summaryAmount}>${getAverageAmount().toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Count</Text>
+              <Text style={styles.summaryAmount}>{filteredExpenses.length}</Text>
+            </View>
+          </View>
         </View>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search expenses..."
           value={searchQuery}
-          onChangeText={handleSearch}
+          onChangeText={setSearchQuery}
         />
         {searchQuery !== '' && (
-          <TouchableOpacity onPress={() => handleSearch('')}>
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
             <Ionicons name="close-circle" size={20} color="#666" />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Category Filter */}
       {renderCategoryFilter()}
 
-      {/* Expenses List */}
       <FlatList
         data={filteredExpenses}
         renderItem={renderExpenseItem}
         keyExtractor={(item) => item.id.toString()}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={loadExpenses} />
         }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="receipt-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyTitle}>No expenses found</Text>
-            <Text style={styles.emptySubtitle}>
-              {searchQuery || selectedCategory !== 'All' 
-                ? 'Try adjusting your filters' 
-                : 'Start by scanning a receipt!'}
-            </Text>
-          </View>
-        }
-        contentContainerStyle={expenses.length === 0 ? styles.emptyList : styles.list}
+        ListEmptyComponent={renderEmptyComponent}
+        contentContainerStyle={filteredExpenses.length === 0 ? styles.emptyList : styles.list}
+        showsVerticalScrollIndicator={false}
       />
 
-      {/* Detailed Expense Modal */}
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ExpenseEntry')}>
+        <Ionicons name="add" size={30} color="#fff" />
+      </TouchableOpacity>
+      
+      {renderSortModal()}
+
       <Modal
         visible={showDetailModal}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'formSheet'}
         onRequestClose={() => setShowDetailModal(false)}
       >
         <View style={styles.modalContainer}>
@@ -333,63 +471,61 @@ const Expenses = () => {
           <ScrollView style={styles.modalContent}>
             {selectedExpense && (
               <>
-                {/* Receipt Image */}
                 {selectedExpense.image_uri && (
                   <View style={styles.imageContainer}>
                     <Text style={styles.sectionTitle}>Receipt Image</Text>
-                    <Image 
-                      source={{ uri: selectedExpense.image_uri }} 
+                    <Image
+                      source={{ uri: selectedExpense.image_uri }}
                       style={styles.receiptImage}
                       resizeMode="contain"
                     />
                   </View>
                 )}
 
-                {/* Basic Info */}
                 <View style={styles.detailSection}>
                   <Text style={styles.sectionTitle}>Basic Information</Text>
-                  
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Merchant:</Text>
                     <Text style={styles.detailValue}>
                       {selectedExpense.merchant_name || 'Unknown'}
                     </Text>
                   </View>
-
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Amount:</Text>
                     <Text style={[styles.detailValue, styles.amountValue]}>
                       ${(selectedExpense.total_amount || 0).toFixed(2)}
                     </Text>
                   </View>
-
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Category:</Text>
                     <View style={styles.categoryContainer}>
-                      <Ionicons 
-                        name={getCategoryIcon(selectedExpense.category)} 
-                        size={16} 
-                        color="#F73D93" 
+                      <Ionicons
+                        name={getCategoryIcon(selectedExpense.category)}
+                        size={16}
+                        color="#F73D93"
                       />
                       <Text style={styles.categoryDetailText}>
-                        {selectedExpense.category}
+                        {selectedExpense.category || 'Other'}
                       </Text>
                     </View>
                   </View>
-
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Date:</Text>
                     <Text style={styles.detailValue}>
                       {formatDate(selectedExpense.date || selectedExpense.created_at)}
                     </Text>
                   </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Added:</Text>
+                    <Text style={styles.detailValue}>
+                      {getRelativeTime(selectedExpense.created_at || selectedExpense.date)}
+                    </Text>
+                  </View>
                 </View>
 
-                {/* OCR Specific Information */}
                 {selectedExpense.processed_by === 'ocr_llm' && (
                   <View style={styles.detailSection}>
                     <Text style={styles.sectionTitle}>OCR Processing Details</Text>
-                    
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Confidence Score:</Text>
                       <View style={[
@@ -401,14 +537,12 @@ const Expenses = () => {
                         </Text>
                       </View>
                     </View>
-
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>AI Reasoning:</Text>
                       <Text style={styles.reasoningText}>
                         {selectedExpense.reasoning || 'No reasoning provided'}
                       </Text>
                     </View>
-
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Processing Method:</Text>
                       <View style={styles.processingBadge}>
@@ -419,20 +553,20 @@ const Expenses = () => {
                   </View>
                 )}
 
-                {/* Line Items */}
                 {selectedExpense.line_items && selectedExpense.line_items.length > 0 && (
                   <View style={styles.detailSection}>
                     <Text style={styles.sectionTitle}>Items Purchased</Text>
                     {selectedExpense.line_items.map((item, index) => (
                       <View key={index} style={styles.lineItemContainer}>
                         <Text style={styles.lineItemBullet}>•</Text>
-                        <Text style={styles.lineItemText}>{item}</Text>
+                        <Text style={styles.lineItemText}>
+                          {typeof item === 'string' ? item : item.name}
+                        </Text>
                       </View>
                     ))}
                   </View>
                 )}
 
-                {/* Raw OCR Text (for debugging/verification) */}
                 {selectedExpense.fullText && (
                   <View style={styles.detailSection}>
                     <Text style={styles.sectionTitle}>Extracted Text (OCR)</Text>
@@ -450,55 +584,62 @@ const Expenses = () => {
       </Modal>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-
   header: {
     backgroundColor: '#fff',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20, // Adjust for iOS notch
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 10,
   },
-
-  summaryContainer: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
+  headerButton: {
+    marginLeft: 15,
+  },
+  summaryContainer: {
+    marginTop: 10,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  summaryItem: {
+    alignItems: 'center',
+  },
   summaryLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666',
   },
-
   summaryAmount: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#F73D93',
   },
-
-  summaryCount: {
-    fontSize: 14,
-    color: '#999',
-    marginLeft: 8,
-  },
-
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -509,28 +650,27 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 25,
     elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-
   searchIcon: {
     marginRight: 10,
   },
-
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: '#333',
   },
-
   categoryFilter: {
     maxHeight: 50,
     marginBottom: 10,
   },
-
   categoryFilterContent: {
     paddingHorizontal: 20,
     paddingVertical: 5,
   },
-
   categoryButton: {
     backgroundColor: '#fff',
     paddingHorizontal: 16,
@@ -539,38 +679,31 @@ const styles = StyleSheet.create({
     marginRight: 10,
     elevation: 1,
   },
-
   selectedCategoryButton: {
     backgroundColor: '#F73D93',
   },
-
   categoryButtonText: {
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
   },
-
   selectedCategoryButtonText: {
     color: '#fff',
     fontWeight: '600',
   },
-
   list: {
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
-
   emptyList: {
     flexGrow: 1,
   },
-
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
   },
-
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
@@ -578,13 +711,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-
   emptySubtitle: {
     fontSize: 16,
     color: '#999',
     textAlign: 'center',
   },
-
   expenseCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -596,74 +727,66 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-
   expenseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-
   merchantContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-
   categoryIcon: {
     marginRight: 12,
   },
-
   merchantInfo: {
     flex: 1,
   },
-
   merchantName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
     marginBottom: 2,
   },
-
   categoryText: {
     fontSize: 14,
     color: '#666',
   },
-
   amountContainer: {
     alignItems: 'flex-end',
   },
-
   amountText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
   },
-
   confidenceBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
   },
-
   confidenceText: {
     fontSize: 10,
     color: '#fff',
     fontWeight: '600',
   },
-
   expenseFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-
   dateText: {
     fontSize: 12,
     color: '#999',
   },
-
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
   ocrBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -671,21 +794,91 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
+    marginRight: 6,
   },
-
   ocrBadgeText: {
     fontSize: 10,
     color: '#007AFF',
     fontWeight: '600',
     marginLeft: 4,
   },
-
+  itemsBadge: {
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  itemsBadgeText: {
+    fontSize: 10,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    backgroundColor: '#F73D93',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
   // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sortModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '80%',
+  },
+  sortModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingBottom: 10,
+    marginBottom: 10,
+  },
+  sortModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  selectedSortOption: {
+    // No change, just a placeholder for potential styling
+  },
+  sortOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  selectedSortOptionText: {
+    color: '#F73D93',
+    fontWeight: '600',
+  },
   modalContainer: {
     flex: 1,
     backgroundColor: '#fff',
   },
-
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -694,32 +887,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
   },
-
   closeButton: {
     padding: 8,
   },
-
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
   },
-
   deleteButton: {
     padding: 8,
   },
-
   modalContent: {
     flex: 1,
     padding: 20,
   },
-
   imageContainer: {
     marginBottom: 20,
   },
-
   receiptImage: {
     width: '100%',
     height: 250,
@@ -727,35 +914,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     marginTop: 10,
   },
-
   detailSection: {
     backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
   },
-
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
     marginBottom: 12,
   },
-
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-
   detailLabel: {
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
     flex: 1,
   },
-
   detailValue: {
     fontSize: 14,
     color: '#333',
@@ -763,38 +945,32 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
-
   amountValue: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#F73D93',
   },
-
   categoryContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-
   categoryDetailText: {
     fontSize: 14,
     color: '#333',
     fontWeight: '500',
     marginLeft: 6,
   },
-
   confidenceContainer: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-
   confidenceDetailText: {
     fontSize: 12,
     color: '#fff',
     fontWeight: '600',
   },
-
   reasoningText: {
     fontSize: 12,
     color: '#666',
@@ -803,7 +979,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginLeft: 10,
   },
-
   processingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -812,45 +987,39 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-
   processingText: {
     fontSize: 12,
     color: '#007AFF',
     fontWeight: '600',
     marginLeft: 4,
   },
-
   lineItemContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 4,
   },
-
   lineItemBullet: {
     fontSize: 14,
     color: '#F73D93',
     marginRight: 8,
     marginTop: 2,
   },
-
   lineItemText: {
     fontSize: 14,
     color: '#333',
     flex: 1,
     lineHeight: 20,
   },
-
   rawTextContainer: {
     backgroundColor: '#f0f0f0',
     padding: 12,
     borderRadius: 8,
     marginTop: 8,
   },
-
   rawText: {
     fontSize: 12,
     color: '#666',
-    fontFamily: 'monospace',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     lineHeight: 16,
   },
 });
